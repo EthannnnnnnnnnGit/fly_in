@@ -10,4 +10,3 @@ class Parser:
 
     def check_files():
         pass
-
