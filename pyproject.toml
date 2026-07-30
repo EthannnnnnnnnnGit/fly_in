@@ -1,7 +1,11 @@
 [project]
-name = "fly-in"
+name = "Fly-in"
 version = "0.1.0"
-description = "Add your description here"
+description = "Drones simulation with graph project"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "flake8>=7.3.0",
+    "mypy>=2.3.0",
+    "pydantic>=2.13.4",
+]

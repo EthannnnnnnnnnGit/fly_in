@@ -2,23 +2,48 @@ import re
 from .error import FormatError
 
 
-class CheckFormat():
+class CheckFormat:
     def __init__(self):
-        self.nb_drones_regex = r"^nb_drones:\s*(\d+)$"
+        self.nb_drones_regex = r"^nb_drones:\s+(\d+)$"
+        self.metadata_regex = r"(\[(\w+[=]\w+){1}(\s+\w+[=]\w+)*\])?$"
+        self.hub_regex = r"^(start_hub|end_hub|hub):\s+([^\s-]+)"\
+            r"s+([-?\d+])\s+([-?\d+])"
+        self.connection_regex = r"^connection:\s+([.+]-[.+]\+)"
 
-    def is_drones_first_line(self, lines: list[str]):
+    def reset_parsing(self) -> None:
         self.start = True
+        self.hubs: list[str] = []
+        self.connections: list[str] = []
+
+    def check_format(self, lines: list[str]) -> tuple[list[str], list[str]]:
+        self.reset_parsing()
         for i, line in enumerate(lines):
             try:
                 if self.ignore_line(line):
                     continue
-                line = line.split("#")[0]
+                line = line.split("#")[0].strip()
                 if self.get_number_drones(line):
+                    continue
+                if self.get_hub(line):
+                    continue
+                if self.get_connection(line):
                     continue
                 raise FormatError("Format error: Following line correspond "
                                   "to no parseable format.")
             except Exception as e:
                 print(f"[Line {i + 1}] {e}")
+                return None
+        return {
+            "nb_drones": self.nb_drones,
+            "hubs": self.hubs,
+            "connections": self.connections
+        }
+
+    def ignore_line(self, line: str) -> bool:
+        line = line.strip()
+        if line.startswith("#"):
+            return True
+        return False
 
     def get_number_drones(self, line: str) -> bool:
         if not self.start:
@@ -31,8 +56,19 @@ class CheckFormat():
         raise ValueError("Value error: first parseable line should be "
                          "the number of drones")
 
-    def ignore_line(self, line: str) -> bool:
-        line = line.strip()
-        if line.startswith("#"):
+    def get_hub(self, line: str) -> bool:
+        if not re.match(r"^(start_hub|end_hub|hub)", line):
+            return False
+        if re.match(self.hub_regex + self.metadata_regex, line):
+            self.hubs.append(line)
             return True
-        return False
+        raise ValueError("Value error: String does not match hub format")
+
+    def get_connection(self, line: str) -> bool:
+        if not re.match(r"^connnection", line):
+            return False
+        if re.match(self.connection_regex + self.metadata_regex, line):
+            self.connections.append(line)
+            return True
+        raise ValueError("Value error: String does not "
+                         "match connection format")
