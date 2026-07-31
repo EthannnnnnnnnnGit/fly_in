@@ -13,15 +13,21 @@ class CreateHub:
 
     def extract_data(self, line: str):
         seperate = line.split("[")
-        if len(seperate) > 1:
-            data, metadata = seperate
-            metadata.strip("]")
-        else:
-            data = seperate
         try:
-            data = self.check_data(data)
+            data = self.check_data(seperate[0])
+            if len(seperate > 1):
+                metadata = self.check_metadata(seperate[1])
+            else:
+                metadata = ()
+            return {data.update(metadata)}
         except Exception as e:
             print(f"[{self.line}] {e}")
 
-    def check_data():
+    def check_data(self, data: str) -> dict:
+        try:
+            type, name, x, y = data.split()
+        except Exception:
+            print("jsp")
+
+    def check_metadata(self, data: str) -> dict:
         pass
