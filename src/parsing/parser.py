@@ -1,11 +1,11 @@
 from .check_format import CheckFormat
-from .create_hubs import CreateHub
+from .create_hubs import HubManager
 
 
 class Parser:
     def __init__(self):
         self.format = CheckFormat()
-        self.create = CreateHub()
+        self.hub = HubManager()
 
     def read_file(self, filename: str) -> None:
         try:
@@ -22,5 +22,11 @@ class Parser:
         if not self.lines:
             return
         data = self.format.check_format(self.lines)
-        hubs = self.create.create_hubs(data["hubs"])
+        if not data:
+            return
+        hubs = self.hub.create_hubs(data["hubs"])
+        print("\n=============\n")
+        for hub in hubs:
+            hub.get_attributes()
+            print("\n=============\n")
         return hubs

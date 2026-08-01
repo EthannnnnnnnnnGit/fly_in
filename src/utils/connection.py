@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
-from .hub import Hub
+from typing import Any
 
 
 class Connection(BaseModel):
-    hub1: Hub
-    hub2: Hub
+    hub1: Any
+    hub2: Any
     capacity: int = Field(default=1, ge=1)
