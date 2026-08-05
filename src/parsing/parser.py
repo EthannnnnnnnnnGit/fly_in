@@ -1,11 +1,14 @@
 from .check_format import CheckFormat
 from .create_hubs import HubManager
+from .connections_manager import ConnectionManager
+from src.utils.graph import Graph
 
 
 class Parser:
     def __init__(self):
         self.format = CheckFormat()
         self.hub = HubManager()
+        self.connections = ConnectionManager()
 
     def read_file(self, filename: str) -> None:
         try:
@@ -24,9 +27,15 @@ class Parser:
         data = self.format.check_format(self.lines)
         if not data:
             return
-        hubs = self.hub.create_hubs(data["hubs"])
+        hubs = self.hub.create_hubs(data["hubs"], data["nb_drones"])
+        if not hubs:
+            return
+        hubs = self.connections.add_connections(hubs, data["connections"])
+        if not hubs:
+            return
         print("\n=============\n")
-        for hub in hubs:
+        for hub in hubs.values():
             hub.get_attributes()
             print("\n=============\n")
-        return hubs
+        graph = Graph(hubs.values(), data["nb_drones"])
+        return graph

@@ -5,10 +5,11 @@ from typing import Any
 
 class CheckFormat:
     def __init__(self):
-        self.nb_drones_regex = r"^nb_drones:\s+(\d+)$"
-        self.metadata_regex = r"(\s+\[(\w+[=]\w+){1}(\s+\w+[=]\w+)*\])?$"
+        self.nb_drones_regex = r"^nb_drones:\s+([\d\.\+-]+)$"
+        self.metadata_regex = r"(\s+\[\s*([\w\.\+-]+=[\w\.\+-]+){1}"\
+            r"(\s+[\w\.\+-]+[=][\w\.\+-]+)*\s*\])?$"
         self.hub_regex = r"^(start_hub|end_hub|hub):\s+([^\s]+)"\
-            r"\s+([-?\d+])\s+([-?\d+])"
+            r"\s+(-?[\d+])\s+(-?[\d+])"
         self.connection_regex = r"^connection:\s+([^\s-]+-[^\s-]+)"
 
     def reset_parsing(self) -> None:
@@ -58,9 +59,12 @@ class CheckFormat:
             self.nb_drones = int(line.split(":")[1])
             if self.nb_drones < 1:
                 raise ValueError("Value error: Should have at least one drone")
+            if self.nb_drones > 100:
+                raise ValueError("Value error: Number of drones "
+                                 "can't exceed 100.")
             return True
         raise ValueError("Value error: first parseable line should be "
-                         "the number of drones")
+                         "the number of drones format")
 
     def get_hub(self, line: str) -> bool:
         if not re.match(r"^(start_hub|end_hub|hub)", line):

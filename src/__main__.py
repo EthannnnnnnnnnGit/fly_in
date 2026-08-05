@@ -4,7 +4,8 @@ import sys
 
 def main() -> None:
     parser = Parser()
-    parser.get_data_files(sys.argv[1])
+    graph = parser.get_data_files(sys.argv[1])
+    graph
 
 
 if __name__ == "__main__":
