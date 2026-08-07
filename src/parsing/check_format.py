@@ -9,7 +9,7 @@ class CheckFormat:
         self.metadata_regex = r"(\s+\[\s*([\w\.\+-]+=[\w\.\+-]+){1}"\
             r"(\s+[\w\.\+-]+[=][\w\.\+-]+)*\s*\])?$"
         self.hub_regex = r"^(start_hub|end_hub|hub):\s+([^\s]+)"\
-            r"\s+(-?[\d+])\s+(-?[\d+])"
+            r"\s+(-?[\d]+)\s+(-?[\d]+)"
         self.connection_regex = r"^connection:\s+([^\s-]+-[^\s-]+)"
 
     def reset_parsing(self) -> None:

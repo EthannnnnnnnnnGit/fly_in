@@ -79,7 +79,7 @@ class HubManager:
                 raise ValueError(f"Value error: Metadata {key} should not "
                                  "appear twice.")
             if key not in metadata.keys():
-                raise ValueError("Value error: Metadata {key} is not known.")
+                raise ValueError(f"Value error: Metadata {key} is not known.")
             match key:
                 case "zone":
                     if value not in ZoneType:
