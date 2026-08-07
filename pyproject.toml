@@ -8,4 +8,5 @@ dependencies = [
     "flake8>=7.3.0",
     "mypy>=2.3.0",
     "pydantic>=2.13.4",
+    "pyqt6>=6.11.0",
 ]

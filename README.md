@@ -11,6 +11,7 @@
 - [Pydantic usage](https://pydantic.dev/docs/validation/latest/concepts/fields/)
 - [Dijkstra comprehension](https://www.datacamp.com/fr/tutorial/dijkstra-algorithm-in-python)
 - [Heapqueue](https://www.geeksforgeeks.org/python/heap-queue-or-heapq-in-python/)
+- [Visual](https://www.pythonguis.com/pyqt6-tutorial/)
 
 #### AI Usage
 
