@@ -1,5 +1,10 @@
-from src.visual import *
+from src.visual.PyQt6 import *
 import sys
+from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog
+from src.visual.file import RestrictedDirFile
+import os
+from pathlib import Path
+from PyQt6.Qt3DExtras import QCuboidMesh
 
 
 class MainWindow(QWidget):
@@ -8,19 +13,26 @@ class MainWindow(QWidget):
 
         # initialize main window
         self.setWindowTitle("Fly in")
+        # self.setStyleSheet("background-color: #ffffff")
         self.setMinimumSize(1000, 700)
 
+        self.root = QEntity()
         # initialize 3d window and add to main window
         self.view3d = Qt3DWindow()
-        self.view3d.defaultFrameGraph().setClearColor(QColor("#39AABB"))
+        self.view3d.defaultFrameGraph().setClearColor(QColor("#BDCACB"))
 
-        self.root = QEntity()
         self.view3d.setRootEntity(self.root)
         self.container = QWidget.createWindowContainer(self.view3d, self)
 
         self.setup_camera()
         self.setup_light()
         self.setup_overlay()
+
+        self.hub_creator = HubsVisualizer(self.root)
+        self.hub_creator.create_hub((-15.0, 0.0, 0.0), "#a6e3a1")
+        self.hub_creator.create_hub((0.0, 5.0, -10.0), "#89b4fa")
+        self.hub_creator.create_hub((0.0, -5.0, 10.0), "#cba6f7")
+        self.hub_creator.create_hub((15.0, 0.0, 0.0), "#f38ba8")
 
     def setup_camera(self) -> None:
         camera = self.view3d.camera()
@@ -39,21 +51,13 @@ class MainWindow(QWidget):
         self.light.addComponent(light)
 
     def setup_overlay(self):
-        self.overlay = QWidget(self)
-        self.overlay.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        overlay_box = QHBoxLayout()
-        overlay_box.setContentsMargins(20, 20, 20, 20)
-
-        top = QHBoxLayout()
-        top.addStretch()
-
+        toolbar = QHBoxLayout()
         self.button_file = QPushButton("Select a map")
-        self.button_file.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.button_file.clicked.connect(self.open_file_dialog)
         self.button_file.setStyleSheet("""
             QPushButton {
-                background-color: #1e1e2e;
-                color: #000000;
+                background-color: #000000;
+                color: #ffffff;
                 border: 2px solid #89b4fa;
                 border-radius: 8px;
                 padding: 10px 18px;
@@ -61,29 +65,52 @@ class MainWindow(QWidget):
             }
             QPushButton:hover {
                 background-color: #89b4fa;
-                color: #11111b;
+                color: #000000;
             }
         """)
-        top.addWidget(self.button_file)
-        overlay_box.addLayout(top)
-        overlay_box.addStretch()
+        toolbar.addWidget(self.button_file)
+        toolbar.addStretch()
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        width, height = self.width(), self.height()
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.addLayout(toolbar)
+        main_layout.addWidget(self.container, stretch=1)
 
-        self.container.setGeometry(0, 0, width, height)
-        self.overlay.setGeometry(0, 0, width, height)
+    def open_file_dialog(self) -> None:
+        target_maps_folder = os.path.join(os.getcwd(), "maps")
 
-        # Keep 3D aspect ratio updated
-        if height > 0:
-            self.view3d.camera().lens().setAspectRatio(width / height)
+        dialog = RestrictedDirFile(self, target_maps_folder)
+
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
+            selected_files = dialog.selectedFiles()[0]
+            if selected_files:
+                self.path = Path(selected_files)
 
 
-if __name__ == '__main__':
+class HubsVisualizer():
+    def __init__(self, root):
+        self.root = root
+
+    def create_hub(self, coordinates: tuple[float, float, float], color: str):
+        hub = QEntity(self.root)
+
+        mesh = QCuboidMesh()
+
+        transform = QTransform()
+        transform.setTranslation(QVector3D(*coordinates))
+
+        material = QPhongMaterial()
+        material.setDiffuse(QColor(color))
+
+        hub.addComponent(mesh)
+        hub.addComponent(transform)
+        hub.addComponent(material)
+
+        return hub
+
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    window = MainWindow()
-    window.show()
-
-    sys.exit(app.exec())
+    fenetre = MainWindow()
+    fenetre.show()
+    app.exec()

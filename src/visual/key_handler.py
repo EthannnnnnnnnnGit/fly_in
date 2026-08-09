@@ -1,6 +1,3 @@
-# from PyQt6 import *
-# from PyQt6.QtCore import QSize, Qt
-# from PyQt6.QtGui import QAction, QIcon, QKeySequence
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow
 
@@ -15,17 +12,9 @@ class Window(QMainWindow):
 
         self.keyReleaseSignal.connect(self.key_on_release)
 
+    @pyqtSlot(int, int)
     def key_on_release(self, key, modifiers):
         print(f"Key release: {key}, modifiers: {modifiers}")
 
-    def keyPressEvent(self, e):
-        self.keyReleaseSignal.emit(e.keys(), e.modifiers().value)
-
-
-if __name__ == "__main__":
-    app = QApplication()
-
-    window = Window()
-    window.show()
-
-    app.exec()
+    def keyReleaseEvent(self, e):
+        self.keyReleaseSignal.emit(e.key(), e.modifiers().value)

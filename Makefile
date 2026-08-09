@@ -13,7 +13,7 @@ lint-strict: install
 	uv run mypy src --strict
 
 clean:
-	rm -rf */*__pycache__ */*/*__pycache__
+	rm -rf */*__pycache__ */*/*__pycache__ */*/*/*__pycache__
 	rm -rf .mypy_cache
 	rm -rf .venv
 

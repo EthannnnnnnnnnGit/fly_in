@@ -1,39 +1,6 @@
 from PyQt6.QtWidgets import QFileDialog, QWidget
 import os
-# from pathlib import Path
 
-
-# class Window(QWidget):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#         self.setWindowTitle('PyQt File Dialog')
-#         self.setGeometry(100, 100, 400, 100)
-
-#         layout = QGridLayout()
-#         self.setLayout(layout)
-
-#         # file selection
-#         file_browse = QPushButton('Browse')
-#         file_browse.clicked.connect(self.open_file_dialog)
-#         self.filename_edit = QLineEdit()
-
-#         layout.addWidget(QLabel('File:'), 0, 0)
-#         layout.addWidget(self.filename_edit, 0, 1)
-#         layout.addWidget(file_browse, 0, 2)
-
-#         self.show()
-
-#     def open_file_dialog(self) -> None:
-#         target_maps_folder = os.path.join(os.getcwd(), "maps")
-
-#         dialog = RestrictedDirFile(self, target_maps_folder)
-
-#         if dialog.exec() == QFileDialog.DialogCode.Accepted:
-#             selected_files = dialog.selectedFiles()[0]
-#             if selected_files:
-#                 path = Path(selected_files)
-#                 self.filename_edit.setText(str(path))
 
 class RestrictedDirFile(QFileDialog):
     def __init__(self, parent: QWidget, maps_dir: str):
