@@ -19,7 +19,7 @@ class MainWindow(QWidget):
         self.root = QEntity()
         # initialize 3d window and add to main window
         self.view3d = Qt3DWindow()
-        self.view3d.defaultFrameGraph().setClearColor(QColor("#BDCACB"))
+        self.view3d.defaultFrameGraph().setClearColor(QColor("white"))
 
         self.view3d.setRootEntity(self.root)
         self.container = QWidget.createWindowContainer(self.view3d, self)
@@ -30,8 +30,8 @@ class MainWindow(QWidget):
 
         self.hub_creator = HubsVisualizer(self.root)
         self.hub_creator.create_hub((-15.0, 0.0, 0.0), "#a6e3a1")
-        self.hub_creator.create_hub((0.0, 5.0, -10.0), "#89b4fa")
-        self.hub_creator.create_hub((0.0, -5.0, 10.0), "#cba6f7")
+        self.hub_creator.create_hub((0.0, 0.0, -10.0), "#89b4fa")
+        self.hub_creator.create_hub((0.0, 0.0, 10.0), "#cba6f7")
         self.hub_creator.create_hub((15.0, 0.0, 0.0), "#f38ba8")
 
     def setup_camera(self) -> None:
@@ -39,15 +39,17 @@ class MainWindow(QWidget):
         camera.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
         camera.setPosition(QVector3D(0.0, 20.0, 40.0))
         camera.setViewCenter(QVector3D(0.0, 0.0, 0.0))
+        camera.setBottom(0)
 
         self.cam_controll = QFirstPersonCameraController(self.root)
         self.cam_controll.setCamera(camera)
+        self.cam_controll.setLinearSpeed(40.0)
 
     def setup_light(self):
         self.light = QEntity(self.root)
         light = QPointLight(self.light)
         light.setColor(QColor("#EFDD10"))
-        light.setIntensity(1.5)
+        light.setIntensity(1)
         self.light.addComponent(light)
 
     def setup_overlay(self):
