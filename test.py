@@ -5,6 +5,8 @@ from src.visual.file import RestrictedDirFile
 import os
 from pathlib import Path
 from PyQt6.Qt3DExtras import QCuboidMesh
+from PyQt6.Qt3DRender import QSceneLoader
+from PyQt6.QtCore import QUrl
 
 
 class MainWindow(QWidget):
@@ -96,17 +98,14 @@ class HubsVisualizer():
     def create_hub(self, coordinates: tuple[float, float, float], color: str):
         hub = QEntity(self.root)
 
-        mesh = QCuboidMesh()
+        mesh = QSceneLoader()
+        mesh.setSource(QUrl.fromLocalFile("assets/water.glb"))
 
         transform = QTransform()
         transform.setTranslation(QVector3D(*coordinates))
 
-        material = QPhongMaterial()
-        material.setDiffuse(QColor(color))
-
         hub.addComponent(mesh)
         hub.addComponent(transform)
-        hub.addComponent(material)
 
         return hub
 
