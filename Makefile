@@ -15,6 +15,5 @@ lint-strict: install
 clean:
 	rm -rf */*__pycache__ */*/*__pycache__ */*/*/*__pycache__
 	rm -rf .mypy_cache
-	rm -rf .venv
 
 .PHONY: venv install run debug lint lint-strict clean

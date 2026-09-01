@@ -33,9 +33,9 @@ class Parser:
         hubs = self.connections.add_connections(hubs, data["connections"])
         if not hubs:
             return
-        print("\n=============\n")
-        for hub in hubs.values():
-            hub.get_attributes()
-            print("\n=============\n")
+        # print("\n=============\n")
+        # for hub in hubs.values():
+        #     hub.get_attributes()
+        #     print("\n=============\n")
         graph = Graph(hubs.values(), data["nb_drones"])
         return graph

@@ -3,17 +3,18 @@ from src.utils.hub import Hub
 from src.utils.connection import Connection
 import heapq
 
-{1: {"hub1": 5, "connection": 1}}
-{1: ["hub1", "hub1"].count("hub1")}
+# {1: {"hub1": 5, "connection": 1}}
+# {1: ["hub1", "hub1"].count("hub1")}
 
 
 class Dijkstra:
-    def __init__(self, graph: Graph) -> None:
+    def reset_attributes(self, graph: Graph):
         self.graph = graph
         self.occupied: dict[int, int] = {}
         self.drones_turn = dict[int, list]
 
-    def find_path(self) -> list[Hub | Connection]:
+    def find_path(self, graph: Graph) -> list[Hub | Connection]:
+        self.reset_attributes(graph)
         self.distance_to_start()
         queue: dict[int, list[int, Hub]] = {1: [(0, self.graph.start)]}
         visited = {self.graph.start.name}

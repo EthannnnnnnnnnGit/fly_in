@@ -1,13 +1,14 @@
-from src.parsing.parser import Parser
-from src.algo.Dijkstra import Dijkstra
-import sys
+from src.visual.visual import MainWindow
+import src.visual.PyQt6 as PyQt
 
 
 def main() -> None:
-    parser = Parser()
-    graph = parser.get_data_files(sys.argv[1])
-    algo = Dijkstra(graph)
-    print(algo.find_path())
+    app = PyQt.QApplication([])
+
+    window = MainWindow()
+    window.show()
+
+    app.exec()
 
 
 if __name__ == "__main__":

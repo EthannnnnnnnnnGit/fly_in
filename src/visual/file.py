@@ -1,15 +1,15 @@
-from PyQt6.QtWidgets import QFileDialog, QWidget
+import src.visual.PyQt6 as PyQt
 import os
 
 
-class RestrictedDirFile(QFileDialog):
-    def __init__(self, parent: QWidget, maps_dir: str):
+class RestrictedDirFile(PyQt.QFileDialog):
+    def __init__(self, parent: PyQt.QWidget, maps_dir: str):
         super().__init__(parent, "Select a file")
         self.maps_dir: str = os.path.abspath(maps_dir)
         self.setDirectory(self.maps_dir)
-        self.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        self.setOption(PyQt.QFileDialog.Option.DontUseNativeDialog, True)
         self.setSidebarUrls([])
-        self.setOption(QFileDialog.Option.ReadOnly, True)
+        self.setOption(PyQt.QFileDialog.Option.ReadOnly, True)
         self.directoryEntered.connect(self.force_maps_dir)
 
     def force_maps_dir(self, new_dir: str) -> None:
