@@ -25,7 +25,7 @@ class MainWindow(PyQt.QWidget):
         self.setup_overlay()
 
         self.map_manager = MapsManager(self.root)
-        # self.map_manager.create_maps("maps/easy/01_linear_path.txt")
+        self.map_manager.create_maps("maps/easy/01_linear_path.txt")
 
     def setup_camera(self) -> None:
         camera = self.view3d.camera()

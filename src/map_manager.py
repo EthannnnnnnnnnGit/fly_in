@@ -13,8 +13,9 @@ class MapsManager():
         graph = self.parser.get_data_files(filename)
         if not graph:
             return
-        # drones = self.algo.find_path(graph)
-        # if not drones:
-        #     print("No path found")
-        #     return
+        drones = self.algo.get_drones_path(graph)
+        print(drones)
+        if not drones:
+            print("No path found")
+            return
         self.visual.create_maps(graph)

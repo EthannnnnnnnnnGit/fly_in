@@ -9,12 +9,13 @@ class Graph:
         self.hubs: dict[str, Hub] = {val.name: val for val in hubs}
         self.nb_drones = nb_drones
         self.get_connections()
+        self.define_start_end()
 
     def define_start_end(self) -> None:
-        for hub in self.hubs:
-            if hub.type == "start_hub":
+        for hub in self.hubs.values():
+            if hub.type.value == "start_hub":
                 self.start = hub
-            if hub.type == "end_hub":
+            if hub.type.value == "end_hub":
                 self.end = hub
 
     def get_connections(self):
