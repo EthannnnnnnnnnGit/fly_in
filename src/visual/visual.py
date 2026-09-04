@@ -20,12 +20,17 @@ class MainWindow(PyQt.QWidget):
         self.view3d.setRootEntity(self.root)
         self.container = PyQt.QWidget.createWindowContainer(self.view3d, self)
 
-        self.setup_camera()
-        self.setup_light()
         self.setup_overlay()
 
         self.map_manager = MapsManager(self.root)
-        self.map_manager.create_maps("maps/easy/01_linear_path.txt")
+
+    def draw_map(self, filename: str):
+        for child in self.root.children():
+            child.setParent(None)
+            child.deleteLater()
+        self.setup_camera()
+        self.setup_light()
+        self.map_manager.create_maps(filename)
 
     def setup_camera(self) -> None:
         camera = self.view3d.camera()
@@ -85,4 +90,4 @@ class MainWindow(PyQt.QWidget):
         if dialog.exec() == PyQt.QFileDialog.DialogCode.Accepted:
             selected_file = dialog.selectedFiles()[0]
             if selected_file:
-                self.map_manager.create_maps(selected_file)
+                self.draw_map(selected_file)

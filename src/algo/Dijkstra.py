@@ -24,29 +24,31 @@ class Dijkstra:
 
     def find_path(self) -> None:
         self.distance_to_start()
-        queue: list[tuple[int | float, Hub]] = [(0, self.graph.start)]
+        queue: list[tuple[int | float, Hub]] = [(0, 0, self.graph.start)]
         visited = {self.graph.start.name}
+        i = 1
         while queue:
-            cost, min_hub = heapq.heappop(queue)
+            cost, _,  min_hub = heapq.heappop(queue)
             neighbors = self.get_neighbor(min_hub)
             self.wait = False
             for neighbor, connection in neighbors:
-                if neighbor.zone == "blocked":
+                if neighbor.zone == "blocked" or neighbor.name in visited:
                     continue
                 if self.should_wait(neighbor, connection, cost):
                     if self.wait:
                         continue
                     self.wait = True
-                    heapq.heappush(queue, (cost + 1, min_hub))
+                    heapq.heappush(queue, (cost + 1, i, min_hub))
+                    i += 1
                     continue
-                cost = self.update_cost(min_hub, neighbor, cost)
-                if neighbor.name not in visited:
-                    heapq.heappush(queue, (cost, neighbor))
+                neighbor_cost = self.update_cost(min_hub, neighbor, cost)
+                heapq.heappush(queue, (neighbor_cost, i, neighbor))
+                i += 1
             visited.add(min_hub.name)
 
     def should_wait(self, neighbor: Hub, connection: Connection,
                     turn: float | int) -> bool:
-        turn = ceil(turn)
+        turn = ceil(turn) + 1
         if neighbor.zone == ZoneType.RESTRICTED:
             if (self.drones_turn.get(turn + 1)
                 and self.drones_turn[turn + 1].get(connection.name) and
@@ -103,8 +105,11 @@ class Dijkstra:
             return []
         hub = self.graph.end
         path = []
+        prev = ceil(self.distance[hub.name][0]) + 1
         while hub:
-            path.append(hub)
+            for i in range(prev - ceil(self.distance[hub.name][0])):
+                path.append(hub)
+            prev = prev = ceil(self.distance[hub.name][0])
             hub = self.distance[hub.name][1]
         return path[::-1]
 

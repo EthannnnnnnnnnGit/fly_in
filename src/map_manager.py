@@ -14,7 +14,6 @@ class MapsManager():
         if not graph:
             return
         drones = self.algo.get_drones_path(graph)
-        print(drones)
         if not drones:
             print("No path found")
             return
