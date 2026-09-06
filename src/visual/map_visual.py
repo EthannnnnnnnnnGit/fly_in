@@ -6,8 +6,13 @@ import math
 class MapVisual():
     def __init__(self, root):
         self.root = root
+        self.middle: tuple[int, int]
+        self.max_size: int
+        self.color = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF",
+                      "#FF00FF", "#FFFFFF", "#000000", "#808080", "#FFA500"]
 
     def create_maps(self, graph: Graph, drones=None):
+        self.graph = graph
         min_x, min_z, max_x, max_z = 0, 0, 0, 0
         for hub in graph.hubs.values():
             x, z = hub.coordinates
@@ -23,12 +28,15 @@ class MapVisual():
             self.create_river((x1 * 15, z1 * 15), (x2 * 15, z2 * 15))
         self.make_grass((min_x * 15, max_x * 15),
                         (min_z * 15, max_z * 15))
+        self.create_drones()
 
     def make_grass(self, x_range: tuple[int, int], z_range: tuple[int, int]):
         middle_x = (x_range[0] + x_range[1]) / 2
         scale_x = (abs(x_range[0]) + abs(x_range[1])) + 20
         middle_z = (z_range[0] + z_range[1]) / 2
         scale_z = (abs(z_range[0]) + abs(z_range[1])) + 20
+        self.middle = (middle_x, middle_z)
+        self.max_size = max(scale_x - 20, scale_z - 20)
 
         grass = PyQt.QEntity(self.root)
 
@@ -59,6 +67,7 @@ class MapVisual():
         dirt.addComponent(mesh)
         dirt.addComponent(transform)
         dirt.addComponent(material)
+        return (middle_x, middle_z)
 
     def create_hub(self, coordinates: tuple[float, float, float],
                    color: str):
@@ -109,3 +118,58 @@ class MapVisual():
         river.addComponent(mesh)
         river.addComponent(transform)
         river.addComponent(material)
+
+    def create_drones(self):
+        self.turn = 0
+        i = 1
+        angle = 360 / len(self.graph.drones)
+        x, z = self.graph.start.coordinates
+        for i, drone in enumerate(self.graph.drones):
+            drone.entity = PyQt.QEntity(self.root)
+            mesh = PyQt.QCuboidMesh()
+
+            transform = PyQt.QTransform()
+            transform.setTranslation(PyQt.QVector3D(x, 5, z))
+            transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
+                PyQt.QVector3D(0, 1, 0), i * angle
+            ))
+
+            material = PyQt.QPhongMaterial()
+            material.setDiffuse(PyQt.QColor(self.color[i % 10]))
+
+            drone.entity.addComponent(mesh)
+            drone.entity.addComponent(transform)
+            drone.entity.addComponent(material)
+
+    def change_turn(self, next_turn: int):
+        drones_updates = []
+        for drone in self.graph.drones:
+            if (len(drone.hub_turns) <= self.turn + next_turn or
+                len(drone.hub_turns) <= self.turn or
+                    self.turn + next_turn < 0 or
+                    (self.turn <= 0 and self.turn + next_turn <= 0)):
+                continue
+            if (drone.hub_turns[self.turn + next_turn] ==
+                    drone.hub_turns[self.turn]):
+                continue
+            x1, z1 = drone.hub_turns[self.turn].coordinates
+            x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
+            vector = PyQt.QVector3D(x2 - x1, 0, -(z2 - z1))
+            drones_updates.append((drone, vector))
+        self.turn += next_turn
+
+        self.current_step = 0
+        self.anim_timer = PyQt.QTimer(self.root)
+        self.anim_timer.setInterval(16)
+
+        def set_frame():
+            for drone, new_pos in drones_updates:
+                transform = drone.entity.findChild(PyQt.QTransform)
+                current_pos = transform.translation()
+                transform.setTranslation(current_pos + new_pos)
+            self.current_step += 1
+            if self.current_step >= 15:
+                self.anim_timer.stop()
+
+        self.anim_timer.timeout.connect(set_frame)
+        self.anim_timer.start()

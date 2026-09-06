@@ -17,4 +17,5 @@ class MapsManager():
         if not drones:
             print("No path found")
             return
+        graph.create_drones(drones)
         self.visual.create_maps(graph)

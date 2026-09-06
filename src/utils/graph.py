@@ -1,4 +1,5 @@
 from .hub import Hub
+from .drones import Drones
 
 
 class Graph:
@@ -24,3 +25,9 @@ class Graph:
             for connection in hub.connections:
                 if connection not in self.connections:
                     self.connections.append(connection)
+
+    def create_drones(self, drones_turn: dict[str, list[Hub]]):
+        self.drones = []
+        for name, hubs in drones_turn.items():
+            # print(name, hubs)
+            self.drones.append(Drones(name, hubs, None))
