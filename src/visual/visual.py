@@ -70,14 +70,10 @@ class MainWindow(PyQt.QWidget):
         x, z = self.map_manager.visual.middle
         self.camera.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1,
                                                     1000.0)
-        self.camera.setPosition(PyQt.QVector3D(x, 50, z))
+        self.camera.setPosition(PyQt.QVector3D(x, x * 2, z))
         self.camera.setViewCenter(PyQt.QVector3D(x, 0.0, z))
         self.camera.setUpVector(PyQt.QVector3D(0.0, 0.0, -1.0))
         self.camera.setBottom(0)
-
-        # self.cam_controll = PyQt.QFirstPersonCameraController(self.root)
-        # self.cam_controll.setCamera(camera)
-        # self.cam_controll.setLinearSpeed(200.0)
 
     def setup_light(self):
         x, z = self.map_manager.visual.middle
@@ -137,6 +133,8 @@ class MainWindow(PyQt.QWidget):
                 self.map_manager.visual.change_turn(1)
             case PyQt.Qt.Key.Key_Left:
                 self.map_manager.visual.change_turn(-1)
+            case PyQt.Qt.Key.Key_T:
+                self.map_manager.visual.tourner_dans_le_vide()
             case _:
                 if not event.isAutoRepeat():
                     self.keys.add(event.key())
@@ -150,11 +148,11 @@ class MainWindow(PyQt.QWidget):
     def wheelEvent(self, event: PyQt.QWheelEvent):
         delta = event.angleDelta().y()
         option = PyQt.QCamera.CameraTranslationOption.TranslateViewCenter
-
+        x, _ = self.map_manager.visual.middle
         if delta > 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, -0.5), option)
+            self.camera.translate(PyQt.QVector3D(0, 0, x / 10), option)
         elif delta < 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, 0.5), option)
+            self.camera.translate(PyQt.QVector3D(0, 0, -x / 10), option)
         event.accept()
 
     def process_camera_movement(self):
@@ -188,6 +186,7 @@ class MainWindow(PyQt.QWidget):
 
             self.camera.pan(delta.x() * 0.2)
             self.camera.tilt(-delta.y() * 0.2)
+            self.camera.setUpVector(PyQt.QVector3D(0.0, 1.0, 0.0))
 
             self.last_mouse_pos = event.position()
         return super().mouseMoveEvent(event)

@@ -1,5 +1,6 @@
 import src.visual.PyQt6 as PyQt
 from src.utils.graph import Graph
+from PyQt6.sip import isdeleted
 import math
 
 
@@ -8,8 +9,6 @@ class MapVisual():
         self.root = root
         self.middle: tuple[int, int]
         self.max_size: int
-        self.color = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF",
-                      "#FF00FF", "#FFFFFF", "#000000", "#808080", "#FFA500"]
 
     def create_maps(self, graph: Graph, drones=None):
         self.graph = graph
@@ -73,8 +72,8 @@ class MapVisual():
                    color: str):
         color = "blue" if not color else color
         x, z = coordinates
-        y = 0.6
-        scale = (5, 0.6, 5)
+        y = 1
+        scale = (4, 0.01, 4)
 
         hub = PyQt.QEntity(self.root)
 
@@ -84,6 +83,25 @@ class MapVisual():
         transform = PyQt.QTransform()
         transform.setTranslation(PyQt.QVector3D(x, y, z))
         transform.setScale3D(PyQt.QVector3D(*scale))
+
+        material = PyQt.QPhongMaterial()
+        material.setDiffuse(PyQt.QColor("cyan"))
+
+        hub.addComponent(mesh)
+        hub.addComponent(transform)
+        hub.addComponent(material)
+
+        self.create_buoy((x, y, z), color)
+
+    def create_buoy(self, coordinates, color):
+        color = "black" if not color else color
+        hub = PyQt.QEntity(self.root)
+
+        mesh = PyQt.QMesh()
+        mesh.setSource(PyQt.QUrl.fromLocalFile("assets/buoy.obj"))
+
+        transform = PyQt.QTransform()
+        transform.setTranslation(PyQt.QVector3D(*coordinates))
 
         material = PyQt.QPhongMaterial()
         material.setDiffuse(PyQt.QColor(color))
@@ -96,24 +114,23 @@ class MapVisual():
         x1, z1 = start[0], -start[1]
         x2, z2 = end[0], -end[1]
 
-        middle = ((x1 + x2) / 2, 0.6, (z1 + z2) / 2)
+        middle = ((x1 + x2) / 2, 0.01, (z1 + z2) / 2)
         angle = math.degrees(math.atan2(z2 - z1, x2 - x1))
         lenght = math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2)
 
         river = PyQt.QEntity(self.root)
 
-        mesh = PyQt.QMesh()
-        mesh.setSource(PyQt.QUrl.fromLocalFile("assets/water.obj"))
+        mesh = PyQt.QCuboidMesh()
 
         transform = PyQt.QTransform()
         transform.setTranslation(PyQt.QVector3D(*middle))
-        transform.setScale3D(PyQt.QVector3D(lenght, 0.5, 1))
+        transform.setScale3D(PyQt.QVector3D(lenght, 1, 2))
         transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
             PyQt.QVector3D(0, 1, 0), -angle
         ))
 
         material = PyQt.QPhongMaterial()
-        material.setDiffuse(PyQt.QColor("blue"))
+        material.setDiffuse(PyQt.QColor("cyan"))
 
         river.addComponent(mesh)
         river.addComponent(transform)
@@ -122,7 +139,7 @@ class MapVisual():
     def create_drones(self):
         self.turn = 0
         i = 1
-        angle = 360 / len(self.graph.drones)
+        angle = 180 / len(self.graph.drones)
         x, z = self.graph.start.coordinates
         for i, drone in enumerate(self.graph.drones):
             drone.entity = PyQt.QEntity(self.root)
@@ -131,7 +148,8 @@ class MapVisual():
             mesh.setSource(PyQt.QUrl.fromLocalFile("assets/boat.obj"))
 
             transform = PyQt.QTransform()
-            transform.setTranslation(PyQt.QVector3D(x, 2, z))
+            transform.setTranslation(PyQt.QVector3D(x, 1.35, z))
+            transform.setScale3D(PyQt.QVector3D(0.33, 0.3, 0.3))
             transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
                 PyQt.QVector3D(0, 1, 0), i * angle
             ))
@@ -144,8 +162,9 @@ class MapVisual():
             drone.entity.addComponent(material)
 
     def change_turn(self, next_turn: int):
-        drones_updates = []
+        self.drones_updates = []
         for drone in self.graph.drones:
+            mult = 15
             if (len(drone.hub_turns) <= self.turn + next_turn or
                 len(drone.hub_turns) <= self.turn or
                     self.turn + next_turn < 0 or
@@ -154,24 +173,60 @@ class MapVisual():
             if (drone.hub_turns[self.turn + next_turn] ==
                     drone.hub_turns[self.turn]):
                 continue
+            if ((drone.hub_turns[self.turn + next_turn] !=
+                    drone.hub_turns[self.turn])):
             x1, z1 = drone.hub_turns[self.turn].coordinates
             x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
             vector = PyQt.QVector3D(x2 - x1, 0, -(z2 - z1))
-            drones_updates.append((drone, vector))
+            goal_vector = PyQt.QVector3D(x2 * 15, 1, -z2 * 15)
+            self.drones_updates.append((drone, vector, goal_vector))
         self.turn += next_turn
 
-        self.current_step = 0
-        self.anim_timer = PyQt.QTimer(self.root)
-        self.anim_timer.setInterval(16)
-
-        def set_frame():
-            for drone, new_pos in drones_updates:
-                transform = drone.entity.findChild(PyQt.QTransform)
-                current_pos = transform.translation()
-                transform.setTranslation(current_pos + new_pos)
-            self.current_step += 1
-            if self.current_step >= 15:
+        if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
+            if self.anim_timer.isActive():
                 self.anim_timer.stop()
 
-        self.anim_timer.timeout.connect(set_frame)
+        self.anim_timer = PyQt.QTimer(self.root)
+        self.anim_timer.setInterval(16)
+        self.anim_timer.timeout.connect(self.set_frame)
         self.anim_timer.start()
+
+    def set_frame(self):
+        stop = False
+        for drone, new_pos, goal in self.drones_updates:
+            transform = drone.entity.findChild(PyQt.QTransform)
+            current_pos = transform.translation()
+            transform.setTranslation(current_pos + new_pos)
+            if current_pos + new_pos == goal:
+                stop = True
+        if stop:
+            self.anim_timer.stop()
+
+    # def tourner_dans_le_vide(self):
+    #     self.drone = self.graph.drones[0]
+    #     first = [(x / 100, z / 100) for x in range(10, 0, -1) for z in range(0, 10, 1)]
+    #     second = [(x / 100, z / 100) for x in range(0, -10, -1) for z in range(10, 0, -1)]
+    #     third = [(x / 100, z / 100) for x in range(-10, 0, 1) for z in range(0, -10, -1)]
+    #     fourth = [(x / 100, z / 100) for x in range(0, 10, 1) for z in range(-10, 0, 1)]
+    #     self.turn = first + second + third + fourth
+
+    #     if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
+    #         if self.anim_timer.isActive():
+    #             self.anim_timer.stop()
+    #     self.i = 0
+    #     self.anim_timer = PyQt.QTimer(self.root)
+    #     self.anim_timer.setInterval(1)
+    #     self.anim_timer.timeout.connect(self.set_frame2)
+    #     self.anim_timer.start()
+
+    # def set_frame2(self):
+    #     x, z = self.turn[self.i]
+    #     transform = self.drone.entity.findChild(PyQt.QTransform)
+    #     current_pos = transform.translation()
+    #     transform.setTranslation(current_pos + PyQt.QVector3D(x, 0, z))
+    #     transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
+    #                     PyQt.QVector3D(0, 1, 0), -(self.i * 360 / 400)
+    #                 ))
+    #     self.i += 1
+    #     if self.i == len(self.turn):
+    #         self.anim_timer.stop()

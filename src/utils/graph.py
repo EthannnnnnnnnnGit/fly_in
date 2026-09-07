@@ -29,5 +29,4 @@ class Graph:
     def create_drones(self, drones_turn: dict[str, list[Hub]]):
         self.drones = []
         for name, hubs in drones_turn.items():
-            # print(name, hubs)
             self.drones.append(Drones(name, hubs, None))
