@@ -126,16 +126,18 @@ class MapVisual():
         x, z = self.graph.start.coordinates
         for i, drone in enumerate(self.graph.drones):
             drone.entity = PyQt.QEntity(self.root)
-            mesh = PyQt.QCuboidMesh()
+
+            mesh = PyQt.QMesh()
+            mesh.setSource(PyQt.QUrl.fromLocalFile("assets/boat.obj"))
 
             transform = PyQt.QTransform()
-            transform.setTranslation(PyQt.QVector3D(x, 5, z))
+            transform.setTranslation(PyQt.QVector3D(x, 2, z))
             transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
                 PyQt.QVector3D(0, 1, 0), i * angle
             ))
 
             material = PyQt.QPhongMaterial()
-            material.setDiffuse(PyQt.QColor(self.color[i % 10]))
+            material.setDiffuse(PyQt.QColor("#9D6C3C"))
 
             drone.entity.addComponent(mesh)
             drone.entity.addComponent(transform)

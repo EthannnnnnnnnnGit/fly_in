@@ -148,7 +148,14 @@ class MainWindow(PyQt.QWidget):
         super().keyReleaseEvent(event)
 
     def wheelEvent(self, event: PyQt.QWheelEvent):
-        return super().wheelEvent(event)
+        delta = event.angleDelta().y()
+        option = PyQt.QCamera.CameraTranslationOption.TranslateViewCenter
+
+        if delta > 0:
+            self.camera.translate(PyQt.QVector3D(0, 0, -0.5), option)
+        elif delta < 0:
+            self.camera.translate(PyQt.QVector3D(0, 0, 0.5), option)
+        event.accept()
 
     def process_camera_movement(self):
         if not self.keys:
@@ -169,3 +176,18 @@ class MainWindow(PyQt.QWidget):
 
         if not move_vector.isNull():
             self.camera.translate(move_vector, option)
+
+    def mousePressEvent(self, event):
+        if event.button() == PyQt.Qt.MouseButton.LeftButton:
+            self.last_mouse_pos = event.position()
+        return super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & PyQt.Qt.MouseButton.LeftButton:
+            delta = event.position() - self.last_mouse_pos
+
+            self.camera.pan(delta.x() * 0.2)
+            self.camera.tilt(-delta.y() * 0.2)
+
+            self.last_mouse_pos = event.position()
+        return super().mouseMoveEvent(event)
