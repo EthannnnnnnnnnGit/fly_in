@@ -9,13 +9,14 @@ class MapsManager():
         self.algo = Dijkstra()
         self.visual = MapVisual(root)
 
-    def create_maps(self, filename: str):
+    def create_maps(self, filename: str) -> bool:
         graph = self.parser.get_data_files(filename)
         if not graph:
-            return
+            return False
         drones = self.algo.get_drones_path(graph)
         if not drones:
             print("No path found")
-            return
+            return False
         graph.create_drones(drones)
         self.visual.create_maps(graph)
+        return True

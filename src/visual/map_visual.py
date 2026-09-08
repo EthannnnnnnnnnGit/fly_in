@@ -1,5 +1,6 @@
 import src.visual.PyQt6 as PyQt
 from src.utils.graph import Graph
+from src.utils.connection import Connection
 from PyQt6.sip import isdeleted
 import math
 
@@ -165,6 +166,7 @@ class MapVisual():
         self.drones_updates = []
         for drone in self.graph.drones:
             mult = 15
+            advancement = 1
             if (len(drone.hub_turns) <= self.turn + next_turn or
                 len(drone.hub_turns) <= self.turn or
                     self.turn + next_turn < 0 or
@@ -173,12 +175,23 @@ class MapVisual():
             if (drone.hub_turns[self.turn + next_turn] ==
                     drone.hub_turns[self.turn]):
                 continue
-            if ((drone.hub_turns[self.turn + next_turn] !=
-                    drone.hub_turns[self.turn])):
-            x1, z1 = drone.hub_turns[self.turn].coordinates
-            x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
-            vector = PyQt.QVector3D(x2 - x1, 0, -(z2 - z1))
-            goal_vector = PyQt.QVector3D(x2 * 15, 1, -z2 * 15)
+            if (isinstance(drone.hub_turns[self.turn], Connection)):
+                advancement = 0.5
+                x1, z1 = drone.hub_turns[self.turn - next_turn].coordinates
+                x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
+            elif (isinstance(drone.hub_turns[self.turn + next_turn],
+                             Connection)):
+                mult = 7.5
+                advancement = 0.5
+                x1, z1 = drone.hub_turns[self.turn].coordinates
+                x2, z2 = drone.hub_turns[self.turn + 2 * next_turn].coordinates
+            else:
+                x1, z1 = drone.hub_turns[self.turn].coordinates
+                x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
+            vector = PyQt.QVector3D((x2 - x1) * advancement, 0,
+                                    (-(z2 - z1)) * advancement)
+            goal_vector = PyQt.QVector3D(x1 * 15 + (x2 - x1) * mult, 1.35,
+                                         -(z1 * 15 + (z2 - z1) * mult))
             self.drones_updates.append((drone, vector, goal_vector))
         self.turn += next_turn
 
@@ -202,31 +215,31 @@ class MapVisual():
         if stop:
             self.anim_timer.stop()
 
-    # def tourner_dans_le_vide(self):
-    #     self.drone = self.graph.drones[0]
-    #     first = [(x / 100, z / 100) for x in range(10, 0, -1) for z in range(0, 10, 1)]
-    #     second = [(x / 100, z / 100) for x in range(0, -10, -1) for z in range(10, 0, -1)]
-    #     third = [(x / 100, z / 100) for x in range(-10, 0, 1) for z in range(0, -10, -1)]
-    #     fourth = [(x / 100, z / 100) for x in range(0, 10, 1) for z in range(-10, 0, 1)]
-    #     self.turn = first + second + third + fourth
+    def tourner_dans_le_vide(self):
+        self.drone = self.graph.drones[0]
+        first = [(x / 100, z / 100) for x in range(10, 0, -1) for z in range(0, 10, 1)]
+        second = [(x / 100, z / 100) for x in range(0, -10, -1) for z in range(10, 0, -1)]
+        third = [(x / 100, z / 100) for x in range(-10, 0, 1) for z in range(0, -10, -1)]
+        fourth = [(x / 100, z / 100) for x in range(0, 10, 1) for z in range(-10, 0, 1)]
+        self.rotate = first + second + third + fourth
 
-    #     if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
-    #         if self.anim_timer.isActive():
-    #             self.anim_timer.stop()
-    #     self.i = 0
-    #     self.anim_timer = PyQt.QTimer(self.root)
-    #     self.anim_timer.setInterval(1)
-    #     self.anim_timer.timeout.connect(self.set_frame2)
-    #     self.anim_timer.start()
+        if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
+            if self.anim_timer.isActive():
+                self.anim_timer.stop()
+        self.i = 0
+        self.anim_timer = PyQt.QTimer(self.root)
+        self.anim_timer.setInterval(1)
+        self.anim_timer.timeout.connect(self.set_frame2)
+        self.anim_timer.start()
 
-    # def set_frame2(self):
-    #     x, z = self.turn[self.i]
-    #     transform = self.drone.entity.findChild(PyQt.QTransform)
-    #     current_pos = transform.translation()
-    #     transform.setTranslation(current_pos + PyQt.QVector3D(x, 0, z))
-    #     transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
-    #                     PyQt.QVector3D(0, 1, 0), -(self.i * 360 / 400)
-    #                 ))
-    #     self.i += 1
-    #     if self.i == len(self.turn):
-    #         self.anim_timer.stop()
+    def set_frame2(self):
+        x, z = self.rotate[self.i]
+        transform = self.drone.entity.findChild(PyQt.QTransform)
+        current_pos = transform.translation()
+        transform.setTranslation(current_pos + PyQt.QVector3D(x, 0, z))
+        transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
+                        PyQt.QVector3D(0, 1, 0), -(self.i * 360 / 400)
+                    ))
+        self.i += 1
+        if self.i == len(self.rotate):
+            self.anim_timer.stop()

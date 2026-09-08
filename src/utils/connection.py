@@ -7,3 +7,6 @@ class Connection(BaseModel):
     hub1: Any
     hub2: Any
     capacity: int = Field(default=1, ge=1)
+
+    def __repr__(self):
+        return self.name

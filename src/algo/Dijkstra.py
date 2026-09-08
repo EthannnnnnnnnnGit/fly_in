@@ -32,7 +32,8 @@ class Dijkstra:
             neighbors = self.get_neighbor(min_hub)
             self.wait = False
             for neighbor, connection in neighbors:
-                if neighbor.zone == "blocked" or neighbor.name in visited:
+                if (neighbor.zone == ZoneType.BLOCKED or
+                        neighbor.name in visited):
                     continue
                 if self.should_wait(neighbor, connection, cost):
                     if self.wait:
@@ -48,7 +49,7 @@ class Dijkstra:
 
     def should_wait(self, neighbor: Hub, connection: Connection,
                     turn: float | int) -> bool:
-        turn = ceil(turn) + 1
+        turn = ceil(turn)
         if neighbor.zone == ZoneType.RESTRICTED:
             if (self.drones_turn.get(turn + 1)
                 and self.drones_turn[turn + 1].get(connection.name) and
@@ -110,21 +111,29 @@ class Dijkstra:
             for i in range(prev - ceil(self.distance[hub.name][0])):
                 path.append(hub)
             prev = prev = ceil(self.distance[hub.name][0])
+            if hub.zone == ZoneType.RESTRICTED:
+                prev -= 1
+                path.append([connection for connection in hub.connections
+                            if connection in
+                            self.distance[hub.name][1].connections][0])
             hub = self.distance[hub.name][1]
         return path[::-1]
 
     def add_path_to_turns(self, paths: list[Hub]):
-        turn = 1
-        for i in range(len(paths) - 1):
+        self.add_hub(paths[0], 0)
+        for i in range(1, len(paths)):
             hub = paths[i]
-            connection = [connection for connection in hub.connections
-                          if connection in paths[i + 1].connections][0]
-            if hub.zone == ZoneType.RESTRICTED:
-                self.add_hub(connection, turn)
-                turn += 1
-            self.add_hub(connection, turn)
-            self.add_hub(hub, turn)
-            turn += 1
+            if isinstance(hub, Connection):
+                self.add_hub(hub, i)
+                continue
+            if isinstance(paths[i - 1], Connection):
+                connection = paths[i - 1]
+            else:
+                connection = [connection for connection in hub.connections
+                              if connection in paths[i - 1].connections][0]
+            if hub != paths[i - 1]:
+                self.add_hub(connection, i)
+            self.add_hub(hub, i)
 
     def add_hub(self, hub, turn):
         if not self.drones_turn.get(turn):

@@ -4,6 +4,36 @@ from src.visual.file import RestrictedDirFile
 import os
 
 
+class FileTree(PyQt.QTreeView):
+    fileDoubleClicked = PyQt.Signal(str)
+
+    def __init__(self, path: str):
+        super().__init__()
+
+        self.file_model = PyQt.QFileSystemModel()
+        self.file_model.setRootPath(path)
+
+        self.setModel(self.file_model)
+
+        self.setRootIndex(self.file_model.index(path))
+
+        for column in range(1, 4):
+            self.hideColumn(column)
+        self.header().hide()
+        self.file_model.setNameFilters(["*.txt"])
+        self.file_model.setNameFilterDisables(False)
+
+        self.doubleClicked.connect(self._on_double_click)
+
+    def _on_double_click(self, index: PyQt.QModelIndex):
+        path = self.file_model.filePath(index)
+
+        if self.file_model.isDir(index):
+            return
+
+        self.fileDoubleClicked.emit(path)
+
+
 class Delegating3DWindow(PyQt.Qt3DWindow):
 
     def __init__(self, main_window):
@@ -35,6 +65,7 @@ class MainWindow(PyQt.QWidget):
         self.setFocusPolicy(PyQt.Qt.FocusPolicy.StrongFocus)
         self.setWindowTitle("Fly in")
         self.setMinimumSize(1000, 700)
+        self.speed = 10
 
         self.root = PyQt.QEntity()
         # initialize 3d window and add to main window
@@ -50,6 +81,7 @@ class MainWindow(PyQt.QWidget):
         self.setup_overlay()
 
         self.map_manager = MapsManager(self.root)
+        self.draw_map("maps/easy/01_linear_path.txt")
 
         self.keys = set()
 
@@ -62,7 +94,8 @@ class MainWindow(PyQt.QWidget):
         for child in self.root.children():
             child.setParent(None)
             child.deleteLater()
-        self.map_manager.create_maps(filename)
+        if (not self.map_manager.create_maps(filename)):
+            return
         self.setup_camera()
         self.setup_light()
 
@@ -90,40 +123,18 @@ class MainWindow(PyQt.QWidget):
         self.light.addComponent(light_pos)
 
     def setup_overlay(self):
-        toolbar = PyQt.QHBoxLayout()
-        self.button_file = PyQt.QPushButton("Select a map")
-        self.button_file.clicked.connect(self.open_file_dialog)
-        self.button_file.setStyleSheet("""
-            QPushButton {
-                background-color: #000000;
-                color: #ffffff;
-                border: 2px solid #89b4fa;
-                border-radius: 8px;
-                padding: 10px 18px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #89b4fa;
-                color: #000000;
-            }
-        """)
-        toolbar.addWidget(self.button_file)
+        toolbar = PyQt.QVBoxLayout()
+
+        self.file_tree = FileTree("maps/")
+        self.file_tree.fileDoubleClicked.connect(self.draw_map)
+
+        toolbar.addWidget(self.file_tree)
         toolbar.addStretch()
 
-        main_layout = PyQt.QVBoxLayout(self)
+        main_layout = PyQt.QHBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.addLayout(toolbar)
         main_layout.addWidget(self.container, stretch=1)
-
-    def open_file_dialog(self) -> None:
-        target_maps_folder = os.path.join(os.getcwd(), "maps")
-
-        dialog = RestrictedDirFile(self, target_maps_folder)
-
-        if dialog.exec() == PyQt.QFileDialog.DialogCode.Accepted:
-            selected_file = dialog.selectedFiles()[0]
-            if selected_file:
-                self.draw_map(selected_file)
 
     def keyPressEvent(self, event):
         match event.key():
@@ -135,6 +146,8 @@ class MainWindow(PyQt.QWidget):
                 self.map_manager.visual.change_turn(-1)
             case PyQt.Qt.Key.Key_T:
                 self.map_manager.visual.tourner_dans_le_vide()
+            case PyQt.Qt.Key.Key_R:
+                self.setup_camera()
             case _:
                 if not event.isAutoRepeat():
                     self.keys.add(event.key())
@@ -150,28 +163,28 @@ class MainWindow(PyQt.QWidget):
         option = PyQt.QCamera.CameraTranslationOption.TranslateViewCenter
         x, _ = self.map_manager.visual.middle
         if delta > 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, x / 10), option)
+            self.camera.translate(PyQt.QVector3D(0, 0, x / self.speed), option)
         elif delta < 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, -x / 10), option)
+            self.camera.translate(PyQt.QVector3D(0, 0, -x / self.speed),
+                                  option)
         event.accept()
 
     def process_camera_movement(self):
         if not self.keys:
             return
 
-        speed = 0.5
         move_vector = PyQt.QVector3D(0, 0, 0)
         option = PyQt.QCamera.CameraTranslationOption.TranslateViewCenter
+        x, _ = self.map_manager.visual.middle
 
         if PyQt.Qt.Key.Key_W in self.keys:
-            move_vector += PyQt.QVector3D(0, speed, 0)
+            move_vector += PyQt.QVector3D(0, x / (self.speed * 4), 0)
         if PyQt.Qt.Key.Key_S in self.keys:
-            move_vector += PyQt.QVector3D(0, -speed, 0)
+            move_vector += PyQt.QVector3D(0, -x / (self.speed * 4), 0)
         if PyQt.Qt.Key.Key_A in self.keys:
-            move_vector += PyQt.QVector3D(-speed, 0, 0)
+            move_vector += PyQt.QVector3D(-x / (self.speed * 4), 0, 0)
         if PyQt.Qt.Key.Key_D in self.keys:
-            move_vector += PyQt.QVector3D(speed, 0, 0)
-
+            move_vector += PyQt.QVector3D(x / (self.speed * 4), 0, 0)
         if not move_vector.isNull():
             self.camera.translate(move_vector, option)
 
