@@ -10,9 +10,10 @@ class Dijkstra:
         self.graph = graph
         self.drones_turn: dict[int, dict[str, int]] = {}
 
-    def get_drones_path(self, graph: Graph) -> dict[str, list[Hub]]:
+    def get_drones_path(self, graph: Graph) -> dict[str, list[Hub |
+                                                              Connection]]:
         self.reset_attributes(graph)
-        paths: dict[str, list[Hub]] = {}
+        paths: dict[str, list[Hub | Connection]] = {}
         for i in range(1, graph.nb_drones + 1):
             self.find_path()
             path = self.get_path()
@@ -24,7 +25,7 @@ class Dijkstra:
 
     def find_path(self) -> None:
         self.distance_to_start()
-        queue: list[tuple[int | float, Hub]] = [(0, 0, self.graph.start)]
+        queue: list[tuple[int | float, int, Hub]] = [(0, 0, self.graph.start)]
         visited: set = {self.graph.start.name}
         i = 1
         while queue:
@@ -69,7 +70,7 @@ class Dijkstra:
             return True
         return False
 
-    def update_cost(self, hub: Hub, neighbor: Hub, cost: int) -> float:
+    def update_cost(self, hub: Hub, neighbor: Hub, cost: int | float) -> float:
         cost += self.get_cost(neighbor)
         if self.distance[neighbor.name][0] > cost:
             self.distance[neighbor.name] = (cost, hub)
@@ -84,7 +85,7 @@ class Dijkstra:
             case _:
                 return 1.0
 
-    def get_neighbor(self, hub: Hub) -> list[Hub, Connection]:
+    def get_neighbor(self, hub: Hub) -> list[tuple[Hub, Connection]]:
         neighbor = []
         for connection in hub.connections:
             if connection.hub1 == hub:
@@ -94,7 +95,7 @@ class Dijkstra:
         return neighbor
 
     def distance_to_start(self) -> None:
-        self.distance: dict[str, tuple[int, Hub | None]] = {}
+        self.distance: dict[str, tuple[int | float, Hub | None]] = {}
         for hub in self.graph.hubs.values():
             if hub == self.graph.start:
                 self.distance[hub.name] = (0, None)
@@ -110,13 +111,16 @@ class Dijkstra:
         while hub:
             for _ in range(prev - ceil(self.distance[hub.name][0])):
                 path.append(hub)
-            prev = prev = ceil(self.distance[hub.name][0])
+            prev = ceil(self.distance[hub.name][0])
+            next = self.distance[hub.name][1]
+            if next is None:
+                break
             if hub.zone == ZoneType.RESTRICTED:
                 prev -= 1
                 path.append([connection for connection in hub.connections
-                            if connection in
-                            self.distance[hub.name][1].connections][0])
-            hub = self.distance[hub.name][1]
+                            if next and connection in
+                            next.connections][0])
+            hub = next
         return path[::-1]
 
     def add_path_to_turns(self, paths: list[Hub | Connection]) -> None:
@@ -129,8 +133,10 @@ class Dijkstra:
             if isinstance(paths[i - 1], Connection):
                 connection = paths[i - 1]
             else:
-                connection = [connection for connection in hub.connections
-                              if connection in paths[i - 1].connections][0]
+                neighbor = paths[i - 1]
+                if not isinstance(neighbor, Connection):
+                    connection = [connection for connection in hub.connections
+                                  if connection in neighbor.connections][0]
             if hub != paths[i - 1]:
                 self.add_hub(connection, i)
             self.add_hub(hub, i)

@@ -93,7 +93,7 @@ class HubManager:
                     if not PyQt.QColor(value).isValid():
                         print("[INFORMATION] Unknow color, color set to "
                               "orange (default)")
-                    continue
+                        continue
                 case "max_drones":
                     if type == "start_hub" or type == "end_hub":
                         continue

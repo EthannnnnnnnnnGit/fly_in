@@ -6,7 +6,7 @@ from typing import Any
 class ConnectionManager:
     def add_connections(self, hubs: dict[str, Hub],
                         connections: list[
-                            tuple[int, str]]) -> dict[str, Hub] | None:
+                            tuple[int, str]]) -> Any:
         self.pairs_done: set[tuple[str, str]] = set()
         for line, connection in connections:
             self.line = line
@@ -74,12 +74,14 @@ class ConnectionManager:
                              "valid positive integer or zero")
         return metadata
 
-    def create_connection(self, data: dict[str, str | int],
+    def create_connection(self, data: dict[str, Any],
                           hubs: dict[str, Hub]) -> dict[str, Hub]:
-        data["hub1"] = hubs[data["hub1"]]
-        data["hub2"] = hubs[data["hub2"]]
-        connection_data = {}
-        connection = Connection(**data)
+        valid_data = {"hub1": hubs[data["hub1"]],
+                      "hub2": hubs[data["hub2"]]}
+        for key, value in data.items():
+            if key not in valid_data:
+                valid_data.update({key: value})
+        connection = Connection.model_validate(valid_data)
         connection.hub1.connections.append(connection)
         connection.hub2.connections.append(connection)
         return hubs

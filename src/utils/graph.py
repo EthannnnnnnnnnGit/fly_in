@@ -29,7 +29,8 @@ class Graph:
                 if connection not in self.connections:
                     self.connections.append(connection)
 
-    def create_drones(self, drones_turn: dict[str, list[Hub]]) -> None:
+    def create_drones(self, drones_turn: dict[str, list[Hub |
+                                                        Connection]]) -> None:
         self.drones = []
         for name, hubs in drones_turn.items():
             self.drones.append(Drones(name, hubs, None))

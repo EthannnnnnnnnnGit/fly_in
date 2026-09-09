@@ -1,8 +1,10 @@
 import src.visual.PyQt6 as PyQt
 from src.utils.graph import Graph
 from src.utils.connection import Connection
+from src.utils.hub import Hub
 from PyQt6.sip import isdeleted
 import math
+from typing import cast
 
 
 class MapVisual():
@@ -174,17 +176,23 @@ class MapVisual():
                 continue
             if (isinstance(drone.hub_turns[self.turn], Connection)):
                 advancement = 0.5
-                x1, z1 = drone.hub_turns[self.turn - next_turn].coordinates
-                x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
+                prev = cast(Hub, drone.hub_turns[self.turn - next_turn])
+                next = cast(Hub, drone.hub_turns[self.turn + next_turn])
+                x1, z1 = prev.coordinates
+                x2, z2 = next.coordinates
             elif (isinstance(drone.hub_turns[self.turn + next_turn],
                              Connection)):
                 mult = 7.5
                 advancement = 0.5
-                x1, z1 = drone.hub_turns[self.turn].coordinates
-                x2, z2 = drone.hub_turns[self.turn + 2 * next_turn].coordinates
+                prev = cast(Hub, drone.hub_turns[self.turn])
+                next = cast(Hub, drone.hub_turns[self.turn + 2 * next_turn])
+                x1, z1 = prev.coordinates
+                x2, z2 = next.coordinates
             else:
-                x1, z1 = drone.hub_turns[self.turn].coordinates
-                x2, z2 = drone.hub_turns[self.turn + next_turn].coordinates
+                prev = cast(Hub, drone.hub_turns[self.turn])
+                next = cast(Hub, drone.hub_turns[self.turn + next_turn])
+                x1, z1 = prev.coordinates
+                x2, z2 = next.coordinates
             vector = PyQt.QVector3D((x2 - x1) * advancement, 0,
                                     (-(z2 - z1)) * advancement)
             goal_vector = PyQt.QVector3D(x1 * 15 + (x2 - x1) * mult, 1.35,
@@ -197,7 +205,7 @@ class MapVisual():
                 self.anim_timer.stop()
 
         self.anim_timer = PyQt.QTimer(self.root)
-        self.anim_timer.setInterval(16)
+        self.anim_timer.setInterval(1)
         self.anim_timer.timeout.connect(self.set_frame)
         self.anim_timer.start()
 
