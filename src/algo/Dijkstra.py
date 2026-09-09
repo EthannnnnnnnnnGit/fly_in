@@ -6,11 +6,11 @@ from math import ceil
 
 
 class Dijkstra:
-    def reset_attributes(self, graph: Graph):
+    def reset_attributes(self, graph: Graph) -> None:
         self.graph = graph
         self.drones_turn: dict[int, dict[str, int]] = {}
 
-    def get_drones_path(self, graph: Graph):
+    def get_drones_path(self, graph: Graph) -> dict[str, list[Hub]]:
         self.reset_attributes(graph)
         paths: dict[str, list[Hub]] = {}
         for i in range(1, graph.nb_drones + 1):
@@ -25,7 +25,7 @@ class Dijkstra:
     def find_path(self) -> None:
         self.distance_to_start()
         queue: list[tuple[int | float, Hub]] = [(0, 0, self.graph.start)]
-        visited = {self.graph.start.name}
+        visited: set = {self.graph.start.name}
         i = 1
         while queue:
             cost, _,  min_hub = heapq.heappop(queue)
@@ -94,21 +94,21 @@ class Dijkstra:
         return neighbor
 
     def distance_to_start(self) -> None:
-        self.distance: dict[str, tuple[int, Hub]] = {}
+        self.distance: dict[str, tuple[int, Hub | None]] = {}
         for hub in self.graph.hubs.values():
             if hub == self.graph.start:
                 self.distance[hub.name] = (0, None)
             else:
                 self.distance[hub.name] = (float("inf"), None)
 
-    def get_path(self) -> list[Hub]:
+    def get_path(self) -> list[Hub | Connection]:
         if not self.distance[self.graph.end.name][1]:
             return []
         hub = self.graph.end
-        path = []
+        path: list[Connection | Hub] = []
         prev = ceil(self.distance[hub.name][0]) + 1
         while hub:
-            for i in range(prev - ceil(self.distance[hub.name][0])):
+            for _ in range(prev - ceil(self.distance[hub.name][0])):
                 path.append(hub)
             prev = prev = ceil(self.distance[hub.name][0])
             if hub.zone == ZoneType.RESTRICTED:
@@ -119,7 +119,7 @@ class Dijkstra:
             hub = self.distance[hub.name][1]
         return path[::-1]
 
-    def add_path_to_turns(self, paths: list[Hub]):
+    def add_path_to_turns(self, paths: list[Hub | Connection]) -> None:
         self.add_hub(paths[0], 0)
         for i in range(1, len(paths)):
             hub = paths[i]
@@ -135,7 +135,7 @@ class Dijkstra:
                 self.add_hub(connection, i)
             self.add_hub(hub, i)
 
-    def add_hub(self, hub, turn):
+    def add_hub(self, hub: Hub | Connection, turn: int) -> None:
         if not self.drones_turn.get(turn):
             self.drones_turn[turn] = {hub.name: 1}
         elif not self.drones_turn[turn].get(hub.name):

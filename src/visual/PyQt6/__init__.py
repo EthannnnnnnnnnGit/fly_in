@@ -2,7 +2,7 @@ from PyQt6.QtCore import (QSize, Qt, QUrl, pyqtSignal, pyqtSlot, QTimer,
                           QEvent, QCoreApplication, pyqtSignal as Signal,
                           QModelIndex)
 from PyQt6.QtGui import (QColor, QKeyEvent, QVector3D, QQuaternion,
-                         QWheelEvent, QFileSystemModel)
+                         QWheelEvent, QFileSystemModel, QMouseEvent)
 from PyQt6.Qt3DCore import QEntity, QTransform
 from PyQt6.Qt3DExtras import (
     QFirstPersonCameraController,
@@ -21,7 +21,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QFileDialog,
     QLabel,
-    QTreeView
+    QTreeView,
+    QGroupBox
 )
 
 
@@ -33,4 +34,4 @@ __all__ = ["QSize", "Qt", "QColor", "QKeyEvent", "QVector3D", "QEntity",
            "QUrl", "QQuaternion", "QMesh", "QFileDialog", "QLabel",
            "pyqtSignal", "pyqtSlot", "QCuboidMesh", "QWheelEvent", "QTimer",
            "QEvent", "QCoreApplication", "QTreeView", "QFileSystemModel",
-           "Signal", "QModelIndex"]
+           "Signal", "QModelIndex", "QGroupBox", "QMouseEvent"]

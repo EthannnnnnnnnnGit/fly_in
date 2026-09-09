@@ -1,14 +1,16 @@
 from src.utils.hub import Hub, ZoneType
 import re
 from typing import Any
+from src.visual import PyQt6 as PyQt
 
 
 class HubManager:
-    def create_hubs(self, data: dict, nb_drones: int):
+    def create_hubs(self, data: list[tuple[int, str]],
+                    nb_drones: int) -> dict[str, Hub]:
         hubs = {}
         self.nb_drones = nb_drones
-        self.names = set()
-        self.coordinates = set()
+        self.names: set[str] = set()
+        self.coordinates: set[tuple[int, int]] = set()
         self.start = False
         self.end = False
         try:
@@ -25,6 +27,7 @@ class HubManager:
         except Exception as e:
             print(f"[Line {self.line}] {e}")
             return {}
+        print(hubs)
         return hubs
 
     def extract_data(self, line: str) -> dict[str, Any]:
@@ -38,9 +41,9 @@ class HubManager:
         data.update(metadata)
         return data
 
-    def check_data(self, data: str) -> dict[str, str | tuple[int, int]]:
-        type, name, x, y = data.split()
-        x, y = int(x), int(y)
+    def check_data(self, data: str) -> dict[str, Any]:
+        type, name, prev_x, prev_y = data.split()
+        x, y = int(prev_x), int(prev_y)
         if not re.match(r"^(start_hub|end_hub|hub):$", type):
             raise ValueError("Value error: Zone type should be either "
                              "start_hub, end_hub or hub")
@@ -68,8 +71,8 @@ class HubManager:
             "coordinates": (x, y)
         }
 
-    def check_metadata(self, data: str, type: str) -> dict:
-        metadata = {"zone": "normal", "color": None, "max_drones": 1}
+    def check_metadata(self, data: str, type: str) -> Any:
+        metadata = {"zone": "normal", "color": "orange", "max_drones": 1}
         if not data:
             return metadata
         used = set()
@@ -87,7 +90,10 @@ class HubManager:
                                          "either normal, blocked, "
                                          "restricted or priority.")
                 case "color":
-                    pass
+                    if not PyQt.QColor(value).isValid():
+                        print("[INFORMATION] Unknow color, color set to "
+                              "orange (default)")
+                    continue
                 case "max_drones":
                     if type == "start_hub" or type == "end_hub":
                         continue

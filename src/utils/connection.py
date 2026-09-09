@@ -8,5 +8,5 @@ class Connection(BaseModel):
     hub2: Any
     capacity: int = Field(default=1, ge=1)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name

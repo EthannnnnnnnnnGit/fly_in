@@ -2,7 +2,10 @@ install:
 	uv sync
 
 run: install
-	uv run python3 -m src $(MAPS)
+	uv run python3 -m src
+
+debug:
+	uv run python3 -m pdb src/__main__.py
 
 lint: install
 	uv run flake8 src

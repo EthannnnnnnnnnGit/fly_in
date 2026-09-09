@@ -1,10 +1,9 @@
 import re
-from .error import FormatError
 from typing import Any
 
 
 class CheckFormat:
-    def __init__(self):
+    def __init__(self) -> None:
         self.nb_drones_regex = r"^nb_drones:\s+([\d\.\+-]+)$"
         self.metadata_regex = r"(\s+\[\s*([\w\.\+-]+=[\w\.\+-]+){1}"\
             r"(\s+[\w\.\+-]+[=][\w\.\+-]+)*\s*\])?$"
@@ -14,10 +13,10 @@ class CheckFormat:
 
     def reset_parsing(self) -> None:
         self.start = True
-        self.hubs: list[str] = []
-        self.connections: list[str] = []
+        self.hubs: list[tuple[int, str]] = []
+        self.connections: list[tuple[int, str]] = []
 
-    def check_format(self, lines: list[str]) -> dict[str, Any]:
+    def check_format(self, lines: list[str]) -> dict[str, Any] | None:
         self.reset_parsing()
         for i, line in enumerate(lines, 1):
             self.line = i
@@ -31,8 +30,8 @@ class CheckFormat:
                     continue
                 if self.get_connection(line):
                     continue
-                raise FormatError("Format error: Following line correspond "
-                                  "to no parseable format.")
+                raise ValueError("Format error: Following line correspond "
+                                 "to no parseable format.")
             except Exception as e:
                 print(f"[Line {i}] {e}")
                 return None

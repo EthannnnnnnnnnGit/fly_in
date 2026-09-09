@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .hub import Hub
+from src.utils.hub import Hub
 from src.visual.PyQt6 import QEntity
 
 

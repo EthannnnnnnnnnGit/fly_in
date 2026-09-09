@@ -2,7 +2,7 @@
 
 ## Description
 
-the best project of the century made by me (the goat of all time)
+
 
 ## Instructions
 

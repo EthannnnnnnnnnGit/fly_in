@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from .connection import Connection
+from src.utils.connection import Connection
 
 
 class HubTypes(Enum):
@@ -22,7 +22,7 @@ class Hub(BaseModel):
     coordinates: tuple[int, int]
     connections: list[Connection] = Field(default=[])
     zone: ZoneType
-    color: str = Field(default=None)
+    color: str | None = Field(default=None)
     max_drones: int = Field(default=1, ge=1)
 
     def get_attributes(self) -> None:
@@ -34,5 +34,5 @@ class Hub(BaseModel):
               f"Color: {self.color}\n"
               f"Max_drones: {self.max_drones}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name

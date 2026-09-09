@@ -5,8 +5,9 @@ from typing import Any
 
 class ConnectionManager:
     def add_connections(self, hubs: dict[str, Hub],
-                        connections: tuple[int, str]) -> bool:
-        self.pairs_done = set()
+                        connections: list[
+                            tuple[int, str]]) -> dict[str, Hub] | None:
+        self.pairs_done: set[tuple[str, str]] = set()
         for line, connection in connections:
             self.line = line
             try:
@@ -21,7 +22,7 @@ class ConnectionManager:
         return hubs
 
     def get_connection_data(self, hubs: dict[str, Hub],
-                            connection: str) -> dict[str, Any]:
+                            connection: str) -> Any:
         seperate = connection.split("[")
         try:
             data = seperate[0]
@@ -29,14 +30,15 @@ class ConnectionManager:
                 metadata = self.check_metadata(seperate[1].strip("]"))
             else:
                 metadata = self.check_metadata("")
-            connection = self.check_connection(hubs, data)
-            connection.update(metadata)
-            return connection
+            new_connection = self.check_connection(hubs, data)
+            new_connection.update(metadata)
+            return new_connection
         except Exception as e:
             print(f"[Line {self.line}] {e}")
             return {}
 
-    def check_connection(self, hubs: dict[str, Hub], connection: str) -> None:
+    def check_connection(self, hubs: dict[str, Hub],
+                         connection: str) -> Any:
         connection = connection.split()[1]
         first, second = connection.split("-")
         if first == second:
@@ -53,7 +55,7 @@ class ConnectionManager:
         self.pairs_done.add((first, second))
         return {"name": connection, "hub1": first, "hub2": second}
 
-    def check_metadata(self, data: str):
+    def check_metadata(self, data: str) -> dict[str, int] | None:
         metadata = {"capacity": 1}
         if not data:
             return metadata
@@ -76,6 +78,7 @@ class ConnectionManager:
                           hubs: dict[str, Hub]) -> dict[str, Hub]:
         data["hub1"] = hubs[data["hub1"]]
         data["hub2"] = hubs[data["hub2"]]
+        connection_data = {}
         connection = Connection(**data)
         connection.hub1.connections.append(connection)
         connection.hub2.connections.append(connection)
