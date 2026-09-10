@@ -6,6 +6,9 @@ from src.utils.connection import Connection
 
 @dataclass
 class Drones():
+    """
+    Drones objects
+    """
     name: str
     hub_turns: list[Hub | Connection]
     entity: QEntity | None

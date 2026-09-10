@@ -6,12 +6,17 @@ from math import ceil
 
 
 class Dijkstra:
+    """
+    Path solving class using Dijkstra algorithm
+    """
     def reset_attributes(self, graph: Graph) -> None:
+        """Set all attribut to default for new maps pathfinding"""
         self.graph = graph
         self.drones_turn: dict[int, dict[str, int]] = {}
 
     def get_drones_path(self, graph: Graph) -> dict[str, list[Hub |
                                                               Connection]]:
+        """Run dijkstra nb of drones times"""
         self.reset_attributes(graph)
         paths: dict[str, list[Hub | Connection]] = {}
         for i in range(1, graph.nb_drones + 1):
@@ -24,9 +29,10 @@ class Dijkstra:
         return paths
 
     def find_path(self) -> None:
+        """Run Dijkstra algorithm"""
         self.distance_to_start()
         queue: list[tuple[int | float, int, Hub]] = [(0, 0, self.graph.start)]
-        visited: set = {self.graph.start.name}
+        visited: set[str] = {self.graph.start.name}
         i = 1
         while queue:
             cost, _,  min_hub = heapq.heappop(queue)
@@ -50,6 +56,15 @@ class Dijkstra:
 
     def should_wait(self, neighbor: Hub, connection: Connection,
                     turn: float | int) -> bool:
+        """
+        Define if a drone should wait depending of the
+        availablity of the neighbor hub and connections
+
+        Keyword arguments:
+        neighbor -- neighbor's hub
+        connection -- neighbor's connection
+        turn -- define the turn disponibility to check
+        """
         turn = ceil(turn)
         if neighbor.zone == ZoneType.RESTRICTED:
             if (self.drones_turn.get(turn + 1)
@@ -71,12 +86,14 @@ class Dijkstra:
         return False
 
     def update_cost(self, hub: Hub, neighbor: Hub, cost: int | float) -> float:
+        """Update the cost of the neighbor"""
         cost += self.get_cost(neighbor)
         if self.distance[neighbor.name][0] > cost:
             self.distance[neighbor.name] = (cost, hub)
         return cost
 
     def get_cost(self, hub: Hub) -> float:
+        """Define the cost depending of hub type"""
         match hub.zone:
             case ZoneType.RESTRICTED:
                 return 2.0
@@ -86,6 +103,7 @@ class Dijkstra:
                 return 1.0
 
     def get_neighbor(self, hub: Hub) -> list[tuple[Hub, Connection]]:
+        """Return the list of neighbor of a hub with their connections"""
         neighbor = []
         for connection in hub.connections:
             if connection.hub1 == hub:
@@ -95,6 +113,7 @@ class Dijkstra:
         return neighbor
 
     def distance_to_start(self) -> None:
+        """Define default distance from start (infinity)"""
         self.distance: dict[str, tuple[int | float, Hub | None]] = {}
         for hub in self.graph.hubs.values():
             if hub == self.graph.start:
@@ -103,6 +122,7 @@ class Dijkstra:
                 self.distance[hub.name] = (float("inf"), None)
 
     def get_path(self) -> list[Hub | Connection]:
+        """Get the path find by the algorithm"""
         if not self.distance[self.graph.end.name][1]:
             return []
         hub = self.graph.end
@@ -124,6 +144,7 @@ class Dijkstra:
         return path[::-1]
 
     def add_path_to_turns(self, paths: list[Hub | Connection]) -> None:
+        """Add the found path to the hashmap"""
         self.add_hub(paths[0], 0)
         for i in range(1, len(paths)):
             hub = paths[i]
@@ -142,6 +163,7 @@ class Dijkstra:
             self.add_hub(hub, i)
 
     def add_hub(self, hub: Hub | Connection, turn: int) -> None:
+        """Add the hub or connection in the hashmap"""
         if not self.drones_turn.get(turn):
             self.drones_turn[turn] = {hub.name: 1}
         elif not self.drones_turn[turn].get(hub.name):

@@ -3,7 +3,12 @@ from typing import Any
 
 
 class CheckFormat:
+    """
+    Class that sort which line correspond at which format
+    and check if it is valid for every format
+    """
     def __init__(self) -> None:
+        """Instantiate regex"""
         self.nb_drones_regex = r"^nb_drones:\s+([\d\.\+-]+)$"
         self.metadata_regex = r"(\s+\[\s*([\w\.\+-]+=[\w\.\+-]+){1}"\
             r"(\s+[\w\.\+-]+[=][\w\.\+-]+)*\s*\])?$"
@@ -12,11 +17,13 @@ class CheckFormat:
         self.connection_regex = r"^connection:\s+([^\s-]+-[^\s-]+)"
 
     def reset_parsing(self) -> None:
+        """Reset parsing for new files"""
         self.start = True
         self.hubs: list[tuple[int, str]] = []
         self.connections: list[tuple[int, str]] = []
 
     def check_format(self, lines: list[str]) -> dict[str, Any] | None:
+        """Check the format for each lines"""
         self.reset_parsing()
         for i, line in enumerate(lines, 1):
             self.line = i
@@ -42,6 +49,7 @@ class CheckFormat:
         }
 
     def ignore_line(self, line: str) -> bool:
+        """Define is the line should be ignore"""
         line = line.strip()
         if line.startswith("#"):
             return True
@@ -50,6 +58,7 @@ class CheckFormat:
         return False
 
     def get_number_drones(self, line: str) -> bool:
+        """Check if it correspond of number of drones format"""
         if not self.start:
             return False
 
@@ -66,6 +75,7 @@ class CheckFormat:
                          "the number of drones format")
 
     def get_hub(self, line: str) -> bool:
+        """Check if the line correspond of hub format"""
         if not re.match(r"^(start_hub|end_hub|hub)", line):
             return False
         if re.match(self.hub_regex + self.metadata_regex, line):
@@ -74,6 +84,7 @@ class CheckFormat:
         raise ValueError("Value error: String does not match hub format")
 
     def get_connection(self, line: str) -> bool:
+        """Check if the hub correspond of hub format"""
         if not re.match(r"^connection", line):
             return False
         if re.match(self.connection_regex + self.metadata_regex, line):

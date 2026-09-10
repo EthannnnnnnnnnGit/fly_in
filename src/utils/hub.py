@@ -4,12 +4,18 @@ from src.utils.connection import Connection
 
 
 class HubTypes(Enum):
+    """
+    Different types of hub
+    """
     START = "start_hub"
     END = "end_hub"
     HUB = "hub"
 
 
 class ZoneType(Enum):
+    """
+    Different types of access of a hub
+    """
     NORMAL = "normal"
     BLOCKED = "blocked"
     RESTRICTED = "restricted"
@@ -17,6 +23,9 @@ class ZoneType(Enum):
 
 
 class Hub(BaseModel):
+    """
+    Hub object
+    """
     type: HubTypes
     name: str
     coordinates: tuple[int, int]
@@ -25,14 +34,6 @@ class Hub(BaseModel):
     color: str | None = Field(default=None)
     max_drones: int = Field(default=1, ge=1)
 
-    def get_attributes(self) -> None:
-        print(f"Type: {self.type}\n"
-              f"Name: {self.name}\n"
-              f"Coordinates: {self.coordinates}\n"
-              f"Connections: {self.connections}\n"
-              f"Zone: {self.zone}\n"
-              f"Color: {self.color}\n"
-              f"Max_drones: {self.max_drones}")
-
     def __repr__(self) -> str:
+        """Class representation"""
         return self.name

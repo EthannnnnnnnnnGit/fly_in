@@ -5,11 +5,16 @@ from src.visual import PyQt6 as PyQt
 
 
 class HubManager:
+    """
+    Extract and check hubs data, then instantiate hubs objects
+    """
     def create_hubs(self, data: list[tuple[int, str]],
                     nb_drones: int) -> dict[str, Hub]:
+        """Create hubs with each hubs line's data"""
         hubs = {}
         self.nb_drones = nb_drones
         self.names: set[str] = set()
+        self.hub_line: list[tuple[int, Hub]] = []
         self.coordinates: set[tuple[int, int]] = set()
         self.start = False
         self.end = False
@@ -18,6 +23,7 @@ class HubManager:
                 self.line = i
                 valid_data = self.extract_data(line)
                 hubs[valid_data["name"]] = Hub(**valid_data)
+                self.hub_line.append((i, hubs[valid_data["name"]]))
             if not self.start:
                 print("Value error: start hub missing")
                 return {}
@@ -27,10 +33,10 @@ class HubManager:
         except Exception as e:
             print(f"[Line {self.line}] {e}")
             return {}
-        print(hubs)
         return hubs
 
     def extract_data(self, line: str) -> dict[str, Any]:
+        """Get the data from the line and returns it"""
         seperate = line.split("[")
         data = self.check_data(seperate[0])
         if len(seperate) > 1:
@@ -42,6 +48,7 @@ class HubManager:
         return data
 
     def check_data(self, data: str) -> dict[str, Any]:
+        """Extract and check from line is data if valid and return it"""
         type, name, prev_x, prev_y = data.split()
         x, y = int(prev_x), int(prev_y)
         if not re.match(r"^(start_hub|end_hub|hub):$", type):
@@ -72,6 +79,7 @@ class HubManager:
         }
 
     def check_metadata(self, data: str, type: str) -> Any:
+        """Extract and check from line is metadata if valid and return it"""
         metadata = {"zone": "normal", "color": "orange", "max_drones": 1}
         if not data:
             return metadata

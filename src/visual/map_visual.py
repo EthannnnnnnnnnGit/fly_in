@@ -8,14 +8,21 @@ from typing import cast
 
 
 class MapVisual():
+    """
+    Class that handle visual of the graph and map
+    """
     anim_timer: PyQt.QTimer
 
     def __init__(self, root: PyQt.QEntity) -> None:
+        """Instantiate important attributes"""
         self.root = root
         self.color = {"normal": "#6495ED", "blocked": "#D70040",
                       "restricted": "#FFA500", "priority": "#00FFFF"}
+        self.is_processing = False
+        self.run = False
 
     def create_maps(self, graph: Graph) -> None:
+        """Create floor, hubs, connection and drones"""
         self.graph = graph
         for hub in graph.hubs.values():
             x, z = hub.coordinates
@@ -29,6 +36,7 @@ class MapVisual():
         self.create_drones()
 
     def make_grass(self) -> None:
+        """Create the floor for the visual"""
         grass = PyQt.QEntity(self.root)
 
         mesh = PyQt.QCuboidMesh()
@@ -66,6 +74,7 @@ class MapVisual():
 
     def create_hub(self, coordinates: tuple[float, float],
                    color: str | None, zone: str) -> None:
+        """Create hub with given type, coordinate and color"""
         color = "blue" if not color else color
         x, z = coordinates
         y = 1
@@ -91,6 +100,7 @@ class MapVisual():
 
     def create_buoy(self, coordinates: tuple[float, int, float],
                     color: str) -> None:
+        """Create buoy at the middle of the hub"""
         color = "black" if not color else color
         hub = PyQt.QEntity(self.root)
 
@@ -110,6 +120,7 @@ class MapVisual():
 
     def create_river(self, start: tuple[int, int],
                      end: tuple[int, int]) -> None:
+        """Create connection as rivers"""
         x1, z1 = start[0], -start[1]
         x2, z2 = end[0], -end[1]
 
@@ -137,9 +148,9 @@ class MapVisual():
         river.addComponent(material)
 
     def create_drones(self) -> None:
+        """Instantiate every drone at the start hub"""
         self.turn = 0
         i = 1
-        angle = 180 / len(self.graph.drones)
         x, z = self.graph.start.coordinates
         for i, drone in enumerate(self.graph.drones):
             drone.entity = PyQt.QEntity(self.root)
@@ -148,10 +159,10 @@ class MapVisual():
             mesh.setSource(PyQt.QUrl.fromLocalFile("assets/boat.obj"))
 
             transform = PyQt.QTransform()
-            transform.setTranslation(PyQt.QVector3D(x, 1.35, z))
+            transform.setTranslation(PyQt.QVector3D(x - 2, 1.35, z))
             transform.setScale3D(PyQt.QVector3D(0.33, 0.3, 0.3))
             transform.setRotation(PyQt.QQuaternion.fromAxisAndAngle(
-                PyQt.QVector3D(0, 1, 0), i * angle
+                PyQt.QVector3D(0, 1, 0), 90
             ))
 
             material = PyQt.QPhongMaterial()
@@ -161,7 +172,30 @@ class MapVisual():
             drone.entity.addComponent(transform)
             drone.entity.addComponent(material)
 
+    def run_simulation(self) -> None:
+        if not hasattr(self, "sim_timer"):
+            self.sim_timer = PyQt.QTimer(self.root)
+            self.sim_timer.timeout.connect(self._step_simulation)
+
+        self.sim_timer.start(500)
+
+    def _step_simulation(self) -> None:
+        if self.turn == self.graph.stats.nb_turns or not self.run:
+            self.sim_timer.stop()
+            return
+
+        if not self.is_processing:
+            self.change_turn(1)
+
+    def stop_simulation(self) -> None:
+        if hasattr(self, "sim_timer"):
+            self.sim_timer.stop()
+
     def change_turn(self, next_turn: int) -> None:
+        """Visually process turn by moving drones"""
+        if self.is_processing:
+            return
+        self.is_processing = True
         self.drones_updates = []
         for drone in self.graph.drones:
             mult: int | float = 15
@@ -198,19 +232,24 @@ class MapVisual():
             goal_vector = PyQt.QVector3D(x1 * 15 + (x2 - x1) * mult, 1.35,
                                          -(z1 * 15 + (z2 - z1) * mult))
             self.drones_updates.append((drone, vector, goal_vector))
-        self.turn += next_turn
+        if self.graph.stats.nb_turns >= self.turn + next_turn >= 0:
+            self.turn += next_turn
 
         if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
             if self.anim_timer.isActive():
                 self.anim_timer.stop()
 
         self.anim_timer = PyQt.QTimer(self.root)
-        self.anim_timer.setInterval(1)
+        self.anim_timer.setInterval(16)
         self.anim_timer.timeout.connect(self.set_frame)
         self.anim_timer.start()
 
     def set_frame(self) -> None:
+        """Move drones with multiples frames"""
         stop = False
+        if not self.drones_updates:
+            self.anim_timer.stop()
+            self.is_processing = False
         for drone, new_pos, goal in self.drones_updates:
             entity = drone.entity
             if entity:
@@ -221,6 +260,7 @@ class MapVisual():
                 stop = True
         if stop:
             self.anim_timer.stop()
+            self.is_processing = False
 
     def tourner_dans_le_vide(self) -> None:
         self.drone = self.graph.drones[0]

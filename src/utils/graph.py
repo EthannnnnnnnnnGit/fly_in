@@ -5,8 +5,12 @@ from src.utils.connection import Connection
 
 
 class Graph:
+    """
+    Graph representation
+    """
     start: Hub
     end: Hub
+    hashmap: dict[int, dict[str, int]]
 
     def __init__(self, hubs: list[Hub], nb_drones: int) -> None:
         self.hubs: dict[str, Hub] = {val.name: val for val in hubs}
@@ -34,3 +38,4 @@ class Graph:
         self.drones = []
         for name, hubs in drones_turn.items():
             self.drones.append(Drones(name, hubs, None))
+        self.stats.get_nb_turns(self)

@@ -3,6 +3,7 @@ import src.visual.PyQt6 as PyQt
 
 
 def main() -> None:
+    """Main"""
     app = PyQt.QApplication([])
 
     window = MainWindow()

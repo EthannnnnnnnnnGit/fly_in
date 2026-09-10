@@ -4,14 +4,22 @@ from typing import Any
 
 
 class ConnectionManager:
+    """
+    Class that check connections data and instantiate
+    connection, link them to the corresponding hub
+    """
     def add_connections(self, hubs: dict[str, Hub],
+                        hub_lines: list[tuple[int, Hub]],
                         connections: list[
                             tuple[int, str]]) -> Any:
+        """Add connection to the hubs it is defined on"""
         self.pairs_done: set[tuple[str, str]] = set()
         for line, connection in connections:
             self.line = line
+            hubs_available = {val[1].name: val[1]
+                              for val in hub_lines if val[0] < line}
             try:
-                data = self.get_connection_data(hubs, connection)
+                data = self.get_connection_data(hubs_available, connection)
                 if not data:
                     return None
             except Exception as e:
@@ -23,6 +31,7 @@ class ConnectionManager:
 
     def get_connection_data(self, hubs: dict[str, Hub],
                             connection: str) -> Any:
+        """Extract connection data from the line connnection"""
         seperate = connection.split("[")
         try:
             data = seperate[0]
@@ -39,6 +48,7 @@ class ConnectionManager:
 
     def check_connection(self, hubs: dict[str, Hub],
                          connection: str) -> Any:
+        """Extract data and check if connection data is valid"""
         connection = connection.split()[1]
         first, second = connection.split("-")
         if first == second:
@@ -56,6 +66,7 @@ class ConnectionManager:
         return {"name": connection, "hub1": first, "hub2": second}
 
     def check_metadata(self, data: str) -> dict[str, int] | None:
+        """Extract and check connection metadata"""
         metadata = {"capacity": 1}
         if not data:
             return metadata
@@ -72,10 +83,13 @@ class ConnectionManager:
         except Exception:
             raise ValueError("Value error: max link capacity should be a "
                              "valid positive integer or zero")
+        finally:
+            metadata["capacity"] = int(value)
         return metadata
 
     def create_connection(self, data: dict[str, Any],
                           hubs: dict[str, Hub]) -> dict[str, Hub]:
+        """Create connection instance and add it to hubs"""
         valid_data = {"hub1": hubs[data["hub1"]],
                       "hub2": hubs[data["hub2"]]}
         for key, value in data.items():

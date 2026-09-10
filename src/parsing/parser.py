@@ -5,12 +5,17 @@ from src.utils.graph import Graph
 
 
 class Parser:
+    """
+    Handle parsing from given file, from reading to value checks
+    """
     def __init__(self) -> None:
+        """Instantiate pipeline"""
         self.format = CheckFormat()
         self.hub = HubManager()
         self.connections = ConnectionManager()
 
     def read_file(self, filename: str) -> None:
+        """Read the file by lines"""
         try:
             with open(filename, "r") as f:
                 lines = f.readlines()
@@ -21,6 +26,7 @@ class Parser:
             self.lines = lines
 
     def get_data_files(self, filename: str) -> Graph | None:
+        """Check files data with pipeline"""
         self.read_file(filename)
         if not self.lines:
             return None
@@ -30,7 +36,9 @@ class Parser:
         hubs = self.hub.create_hubs(data["hubs"], data["nb_drones"])
         if not hubs:
             return None
-        hubs = self.connections.add_connections(hubs, data["connections"])
+        hubs = self.connections.add_connections(hubs,
+                                                self.hub.hub_line,
+                                                data["connections"])
         if not hubs:
             return None
         graph = Graph(hubs.values(), data["nb_drones"])

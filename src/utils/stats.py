@@ -6,11 +6,15 @@ if TYPE_CHECKING:
 
 
 class Stats():
+    """
+    Class that contains graph data for visual
+    """
     def __init__(self, graph: Graph):
         self.define_limits(graph)
         self.get_middle()
 
     def define_limits(self, graph: Graph) -> None:
+        """Define the max coordinates of the graph"""
         self.min_x, self.max_x, self.min_z, self.max_z = 0, 0, 0, 0
         for hub in graph.hubs.values():
             x, z = hub.coordinates
@@ -21,7 +25,15 @@ class Stats():
             self.max_z = z if z > self.max_z else self.max_z
 
     def get_middle(self) -> None:
+        """Find the middle coordinates of the graph"""
         self.middle_x = (self.min_x * 15 + self.max_x * 15) / 2
         self.scale_x = (abs(self.min_x * 15) + abs(self.max_x * 15)) + 20
         self.middle_z = (self.min_z + self.max_z) / 2
         self.scale_z = (abs(self.min_z * 15) + abs(self.max_z * 15)) + 20
+
+    def get_nb_turns(self, graph: Graph) -> None:
+        """Get the max number of drones for the graph"""
+        self.nb_turns = 0
+        for drone in graph.drones:
+            if len(drone.hub_turns) - 1 > self.nb_turns:
+                self.nb_turns = len(drone.hub_turns) - 1
