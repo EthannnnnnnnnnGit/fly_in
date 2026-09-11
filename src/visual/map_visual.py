@@ -317,3 +317,53 @@ class OrbitHub():
         z = self.center.z() + self.radius() + math.sin(self.current_angle)
 
         return PyQt.QVector3D(x, self.center.y(), z)
+
+    def calculate_heading_angle(self, current_pos: PyQt.QVector3D,
+                                target_pos: PyQt.QVector3D) -> float:
+        """Calculates the rotation angle in degrees on the XZ plane."""
+        direction = target_pos - current_pos
+        angle_rad = math.atan2(direction.z(), direction.x())
+        return math.degrees(angle_rad)
+
+    def set_boat_rotation(self, boat_entity, current_pos: PyQt.QVector3D,
+                          target_pos: PyQt.QVector3D, model_offset: float = 90.0) -> None:
+        """Rotates the boat's QTransform to face toward target_pos."""
+        angle_deg = self.calculate_heading_angle(current_pos, target_pos)
+        final_angle = angle_deg + model_offset
+        rotation = PyQt.QQuaternion.fromAxisAndAngle(PyQt.QVector3D(0, 1, 0), -final_angle)
+        boat_entity.transform.setRotation(rotation)
+
+    def update_boat_movement(self, boat, speed: float = 0.1,
+                             arrival_threshold: float = 0.2) -> None:
+        """Call this inside your QTimer tick / frame update loop."""
+        if not boat.has_active_path():
+            return
+
+        current_pos = boat.position
+        target_pos = boat.current_waypoint()
+
+        # Calculate distance to current target coordinate
+        distance = current_pos.distanceToPoint(target_pos)
+
+        if distance <= arrival_threshold:
+            # 1. Snap directly to the exact destination coordinate
+            boat.set_position(target_pos)
+
+            # 2. Advance to next point in the orbit/route
+            boat.advance_waypoint()
+
+            # 3. If there is a next point, rotate immediately toward it (or the final connection)
+            if boat.has_active_path():
+                next_target = boat.current_waypoint()
+                set_boat_rotation(boat, target_pos, next_target)
+            else:
+                # Reached final node: align with the connection path vector
+                set_boat_rotation(boat, target_pos, boat.connection_target_pos)
+        else:
+            # 1. Face the target coordinate while moving
+            set_boat_rotation(boat, current_pos, target_pos)
+
+            # 2. Move step towards target coordinate
+            direction = (target_pos - current_pos).normalized()
+            new_pos = current_pos + (direction * speed)
+            boat.set_position(new_pos)
