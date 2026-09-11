@@ -273,9 +273,9 @@ class MainWindow(PyQt.QWidget):
         option = PyQt.QCamera.CameraTranslationOption.TranslateViewCenter
         x = self.map_manager.graph.stats.middle_x
         if delta > 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, x / self.speed), option)
+            self.camera.translate(PyQt.QVector3D(0, 0, x), option)
         elif delta < 0:
-            self.camera.translate(PyQt.QVector3D(0, 0, -x / self.speed),
+            self.camera.translate(PyQt.QVector3D(0, 0, -x),
                                   option)
         event.accept()
 

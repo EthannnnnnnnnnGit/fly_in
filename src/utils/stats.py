@@ -28,7 +28,7 @@ class Stats():
         """Find the middle coordinates of the graph"""
         self.middle_x = (self.min_x * 15 + self.max_x * 15) / 2
         self.scale_x = (abs(self.min_x * 15) + abs(self.max_x * 15)) + 20
-        self.middle_z = (self.min_z + self.max_z) / 2
+        self.middle_z = (self.min_z * 15 + self.max_z * 15) / 2
         self.scale_z = (abs(self.min_z * 15) + abs(self.max_z * 15)) + 20
 
     def get_nb_turns(self, graph: Graph) -> None:

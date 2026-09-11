@@ -2,6 +2,7 @@ import src.visual.PyQt6 as PyQt
 from src.utils.graph import Graph
 from src.utils.connection import Connection
 from src.utils.hub import Hub
+from src.utils.drones import Drones
 from PyQt6.sip import isdeleted
 import math
 from typing import cast
@@ -185,23 +186,21 @@ class MapVisual():
             drone.entity.addComponent(material)
 
     def run_simulation(self) -> None:
-        if not hasattr(self, "sim_timer"):
+        if not hasattr(self, "sim_timer") or isdeleted(self.anim_timer):
             self.sim_timer = PyQt.QTimer(self.root)
             self.sim_timer.timeout.connect(self._step_simulation)
 
-        self.sim_timer.start(500)
+        self.sim_timer.start(100)
 
     def _step_simulation(self) -> None:
         if self.turn == self.graph.stats.nb_turns or not self.run:
+            if self.turn == self.graph.stats.nb_turns and self.run:
+                self.run = not self.run
             self.sim_timer.stop()
             return
 
         if not self.is_processing:
             self.change_turn(1)
-
-    def stop_simulation(self) -> None:
-        if hasattr(self, "sim_timer"):
-            self.sim_timer.stop()
 
     def change_turn(self, next_turn: int) -> None:
         """Visually process turn by moving drones"""
@@ -243,7 +242,6 @@ class MapVisual():
                                     (-(z2 - z1)) * advancement)
             goal_vector = PyQt.QVector3D(x1 * 15 + (x2 - x1) * mult, 1.35,
                                          -(z1 * 15 + (z2 - z1) * mult))
-            print(vector, goal_vector)
             self.drones_updates.append((drone, vector, goal_vector))
         if self.graph.stats.nb_turns >= self.turn + next_turn >= 0:
             self.turn += next_turn
@@ -271,14 +269,48 @@ class MapVisual():
             transform.setTranslation(current_pos + new_pos)
             if current_pos + new_pos == goal:
                 stop = True
+                transform.setTranslation(goal)
         if stop:
             self.anim_timer.stop()
             self.is_processing = False
 
-    def rotate_hub(self) -> None:
+    def is_near_orbit_exit(
+            self,
+            boat_pos: PyQt.QVector3D,
+            exit_pos: PyQt.QVector3D,
+            hub_center: PyQt.QVector3D,
+            angle_threshold_degrees: float = 5.0,
+    ) -> bool:
+        """
+        Checks if the boat's current angle around the hub is within a
+        specified threshold of the target exit angle.
+        """
+        # 1. Vectors relative to hub center
+        current_vec = boat_pos - hub_center
+        exit_vec = exit_pos - hub_center
+
+        # 2. Get angles in radians on XZ plane
+        angle_current = math.atan2(current_vec.z(), current_vec.x())
+        angle_exit = math.atan2(exit_vec.z(), exit_vec.x())
+
+        # 3. Calculate shortest angular difference (handles 0/360 boundary)
+        diff_rad = math.atan2(
+            math.sin(angle_current - angle_exit),
+            math.cos(angle_current - angle_exit),
+        )
+        diff_deg = math.degrees(abs(diff_rad))
+
+        # 4. Return True if within the angular tolerance zone
+        return diff_deg <= angle_threshold_degrees
+
+    def rotate_hub(self, drone: Drones, vector: PyQt.QVector3D) -> None:
         if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
             if self.anim_timer.isActive():
                 self.anim_timer.stop()
+        goal = PyQt.QVector3D(vector)
+        for i in range(len(self.turn)):
+            if True:
+                pass
         self.i = 0
         self.anim_timer = PyQt.QTimer(self.root)
         self.anim_timer.setInterval(1)
@@ -298,72 +330,3 @@ class MapVisual():
         self.i += 1
         if self.i == len(self.rotate):
             self.anim_timer.stop()
-
-
-class OrbitHub():
-    def __init__(self, buoy: PyQt.QVector3D):
-        self.center = buoy
-        self.radius = 6
-        self.current_angle = 0
-        self.speed = 0.03
-
-    def get_next_orbit_pos(self) -> PyQt.QVector3D:
-        self.current_angle += self.speed
-
-        if self.current_angle > 2 * math.pi:
-            self.current_angle -= 2 * math.pi
-
-        x = self.center.x() + self.radius() + math.cos(self.current_angle)
-        z = self.center.z() + self.radius() + math.sin(self.current_angle)
-
-        return PyQt.QVector3D(x, self.center.y(), z)
-
-    def calculate_heading_angle(self, current_pos: PyQt.QVector3D,
-                                target_pos: PyQt.QVector3D) -> float:
-        """Calculates the rotation angle in degrees on the XZ plane."""
-        direction = target_pos - current_pos
-        angle_rad = math.atan2(direction.z(), direction.x())
-        return math.degrees(angle_rad)
-
-    def set_boat_rotation(self, boat_entity, current_pos: PyQt.QVector3D,
-                          target_pos: PyQt.QVector3D, model_offset: float = 90.0) -> None:
-        """Rotates the boat's QTransform to face toward target_pos."""
-        angle_deg = self.calculate_heading_angle(current_pos, target_pos)
-        final_angle = angle_deg + model_offset
-        rotation = PyQt.QQuaternion.fromAxisAndAngle(PyQt.QVector3D(0, 1, 0), -final_angle)
-        boat_entity.transform.setRotation(rotation)
-
-    def update_boat_movement(self, boat, speed: float = 0.1,
-                             arrival_threshold: float = 0.2) -> None:
-        """Call this inside your QTimer tick / frame update loop."""
-        if not boat.has_active_path():
-            return
-
-        current_pos = boat.position
-        target_pos = boat.current_waypoint()
-
-        # Calculate distance to current target coordinate
-        distance = current_pos.distanceToPoint(target_pos)
-
-        if distance <= arrival_threshold:
-            # 1. Snap directly to the exact destination coordinate
-            boat.set_position(target_pos)
-
-            # 2. Advance to next point in the orbit/route
-            boat.advance_waypoint()
-
-            # 3. If there is a next point, rotate immediately toward it (or the final connection)
-            if boat.has_active_path():
-                next_target = boat.current_waypoint()
-                set_boat_rotation(boat, target_pos, next_target)
-            else:
-                # Reached final node: align with the connection path vector
-                set_boat_rotation(boat, target_pos, boat.connection_target_pos)
-        else:
-            # 1. Face the target coordinate while moving
-            set_boat_rotation(boat, current_pos, target_pos)
-
-            # 2. Move step towards target coordinate
-            direction = (target_pos - current_pos).normalized()
-            new_pos = current_pos + (direction * speed)
-            boat.set_position(new_pos)

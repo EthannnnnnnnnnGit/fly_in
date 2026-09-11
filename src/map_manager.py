@@ -37,3 +37,4 @@ class MapsManager():
                     print(f"{drone.name}-{drone.hub_turns[i + 1].name}",
                           end=" ")
             print()
+        print()
