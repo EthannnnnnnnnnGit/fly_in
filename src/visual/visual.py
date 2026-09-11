@@ -302,9 +302,9 @@ class MainWindow(PyQt.QWidget):
             self.camera.translate(move_vector, option)
 
     def mousePressEvent(self, event: PyQt.QMouseEvent | None) -> None:
+        """Define mouse event as camera update"""
         if not hasattr(self.map_manager, "graph"):
             return
-        """Define mouse event as camera update"""
         if not event:
             return super().mouseMoveEvent(event)
         if event.button() == PyQt.Qt.MouseButton.LeftButton:
@@ -312,9 +312,9 @@ class MainWindow(PyQt.QWidget):
         return super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: PyQt.QMouseEvent | None) -> None:
+        """Move camera according to mouse moving"""
         if not hasattr(self.map_manager, "graph"):
             return
-        """Move camera according to mouse moving"""
         if not event or not self.camera:
             return super().mouseMoveEvent(event)
         if event.buttons() & PyQt.Qt.MouseButton.LeftButton:

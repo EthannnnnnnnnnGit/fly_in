@@ -20,6 +20,18 @@ class MapVisual():
                       "restricted": "#FFA500", "priority": "#00FFFF"}
         self.is_processing = False
         self.run = False
+        self.define_turn()
+
+    def define_turn(self):
+        first = [(x / 100, z / 100) for x in range(10, 0, -1)
+                 for z in range(0, 10, 1)]
+        second = [(x / 100, z / 100) for x in range(0, -10, -1)
+                  for z in range(10, 0, -1)]
+        third = [(x / 100, z / 100) for x in range(-10, 0, 1)
+                 for z in range(0, -10, -1)]
+        fourth = [(x / 100, z / 100) for x in range(0, 10, 1)
+                  for z in range(-10, 0, 1)]
+        self.rotate = first + second + third + fourth
 
     def create_maps(self, graph: Graph) -> None:
         """Create floor, hubs, connection and drones"""
@@ -231,6 +243,7 @@ class MapVisual():
                                     (-(z2 - z1)) * advancement)
             goal_vector = PyQt.QVector3D(x1 * 15 + (x2 - x1) * mult, 1.35,
                                          -(z1 * 15 + (z2 - z1) * mult))
+            print(vector, goal_vector)
             self.drones_updates.append((drone, vector, goal_vector))
         if self.graph.stats.nb_turns >= self.turn + next_turn >= 0:
             self.turn += next_turn
@@ -262,18 +275,7 @@ class MapVisual():
             self.anim_timer.stop()
             self.is_processing = False
 
-    def tourner_dans_le_vide(self) -> None:
-        self.drone = self.graph.drones[0]
-        first = [(x / 100, z / 100) for x in range(10, 0, -1)
-                 for z in range(0, 10, 1)]
-        second = [(x / 100, z / 100) for x in range(0, -10, -1)
-                  for z in range(10, 0, -1)]
-        third = [(x / 100, z / 100) for x in range(-10, 0, 1)
-                 for z in range(0, -10, -1)]
-        fourth = [(x / 100, z / 100) for x in range(0, 10, 1)
-                  for z in range(-10, 0, 1)]
-        self.rotate = first + second + third + fourth
-
+    def rotate_hub(self) -> None:
         if hasattr(self, "anim_timer") and not isdeleted(self.anim_timer):
             if self.anim_timer.isActive():
                 self.anim_timer.stop()
@@ -297,5 +299,21 @@ class MapVisual():
         if self.i == len(self.rotate):
             self.anim_timer.stop()
 
-    def rotate_hub(self) -> None:
-        pass
+
+class OrbitHub():
+    def __init__(self, buoy: PyQt.QVector3D):
+        self.center = buoy
+        self.radius = 6
+        self.current_angle = 0
+        self.speed = 0.03
+
+    def get_next_orbit_pos(self) -> PyQt.QVector3D:
+        self.current_angle += self.speed
+
+        if self.current_angle > 2 * math.pi:
+            self.current_angle -= 2 * math.pi
+
+        x = self.center.x() + self.radius() + math.cos(self.current_angle)
+        z = self.center.z() + self.radius() + math.sin(self.current_angle)
+
+        return PyQt.QVector3D(x, self.center.y(), z)
